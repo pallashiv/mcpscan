@@ -20,7 +20,8 @@ src/mcpscan/
   suppress.py  Baseline (--baseline/--write-baseline) and ignore-file (--ignore-file) handling
   cli.py       argparse entrypoint: `mcpscan scan <path>`
 action.yml    GitHub Action (composite); scripts/run-scan.sh is its scan step
-tests/         pytest; one test per rule (a positive and a negative case)
+tests/         pytest; one test per rule (a positive and a negative case);
+               fixtures/real/ = real manifests from legitimate servers, guarding against false positives
 examples/      vulnerable_manifest.json, safe_manifest.json, vulnerable_config.json
 
 ## Inputs supported
@@ -36,10 +37,12 @@ Manifest rules:
 - MCP003 References to sensitive files (~/.ssh, .env, .aws/credentials...). HIGH.
 - MCP004 Over-permissioned capability (command exec, fs write/delete, raw SQL,
   arbitrary URL fetch, secret access, outbound messaging). MEDIUM/HIGH.
-- MCP005 Weak input schema: free-form string for risky param names (path, command,
-  url, query...) without enum/pattern/maxLength; missing schema; additionalProperties not false.
+- MCP005 Weak input schema. Exec-like params (command, sql, script...) without
+  enum/pattern/maxLength: MEDIUM per tool. Target params (path, url, host...) and
+  additionalProperties not false: LOW, ONE finding per manifest (subject "manifest") to avoid noise.
+  Missing schema: LOW per tool.
 - MCP006 State-changing tool lacks readOnlyHint/destructiveHint annotations. LOW.
-- MCP007 Description references another tool (cross-tool shadowing). MEDIUM.
+- MCP007 Description references another tool (cross-tool shadowing). MEDIUM (LOW for deprecation notices).
 - MCP008 Duplicate tool names. MEDIUM.
 Config rules:
 - CFG001 Hardcoded secret in env/headers/args/URL. HIGH.

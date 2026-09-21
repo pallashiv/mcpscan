@@ -10,7 +10,7 @@ from __future__ import annotations
 import ipaddress
 import re
 import unicodedata
-from typing import Any, Callable, Dict, Iterator, List, NamedTuple, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, Iterator, List, NamedTuple, Optional, Tuple
 from urllib.parse import parse_qsl, urlsplit
 
 from .models import Finding, Severity, snippet
@@ -56,8 +56,9 @@ RULE_INFO: Dict[str, RuleInfo] = {
         ),
         RuleInfo(
             "MCP005", "Weak input schema", (M, L),
-            "Free-form string for a risky parameter, missing input schema, or additionalProperties "
-            "not set to false.",
+            "Free-form string for a risky parameter (command, sql, script: per tool, medium; path, "
+            "url, host: once per manifest, low), missing input schema, or additionalProperties not "
+            "set to false (once per manifest).",
             "Constrain risky string parameters with enum, pattern or maxLength, declare an "
             "inputSchema, and set additionalProperties to false.",
         ),
@@ -68,8 +69,9 @@ RULE_INFO: Dict[str, RuleInfo] = {
             "prompt appropriately.",
         ),
         RuleInfo(
-            "MCP007", "Cross-tool reference (shadowing)", (M,),
-            "A tool description refers to another tool, a common tool-shadowing technique.",
+            "MCP007", "Cross-tool reference (shadowing)", (M, L),
+            "A tool description refers to another tool, a common tool-shadowing technique. "
+            "Deprecation notices are reported at low severity.",
             "Tool descriptions should be self-contained. Remove references to other tools.",
         ),
         RuleInfo(
@@ -402,12 +404,15 @@ def check_mcp004(tools: List[Dict[str, Any]]) -> List[Finding]:
 # MCP005: weak input schema
 # --------------------------------------------------------------------------- #
 
-_RISKY_STRONG = frozenset({
+# Parameters that hand the model a way to run something: flagged per tool.
+_RISKY_EXEC = frozenset({"command", "cmd", "script", "code", "sql", "shell", "executable", "program"})
+# Parameters that name a target (file, URL, host). Nearly every file or HTTP tool has one and a
+# JSON schema cannot express "inside the allowed directory", so these are low severity and
+# reported once per manifest instead of once per tool.
+_RISKY_TARGET = frozenset({
     "path", "filepath", "file", "filename", "dir", "directory", "folder", "root",
-    "url", "uri", "endpoint", "host", "hostname", "command", "cmd", "script",
-    "code", "sql", "shell", "executable", "program",
+    "url", "uri", "endpoint", "host", "hostname", "args", "arguments", "expression",
 })
-_RISKY_WEAK = frozenset({"query", "args", "arguments", "expression"})
 _CONSTRAINTS = ("enum", "const", "pattern", "maxLength", "oneOf", "anyOf", "allOf")
 
 
@@ -432,8 +437,16 @@ def _is_string(spec: Dict[str, Any]) -> bool:
     return t == "string" or (isinstance(t, list) and "string" in t)
 
 
+def _name_list(names: Iterable[str], limit: int = 3) -> str:
+    ordered = sorted(set(names))
+    shown = ", ".join(ordered[:limit])
+    return shown + (f", +{len(ordered) - limit} more" if len(ordered) > limit else "")
+
+
 def check_mcp005(tools: List[Dict[str, Any]]) -> List[Finding]:
     out: List[Finding] = []
+    target_params: Dict[str, List[str]] = {}  # parameter path -> tools where it is unconstrained
+    open_tools: List[str] = []
     for i, tool in enumerate(tools):
         name = tool_name(tool, i)
         subject = f"tool:{name}"
@@ -444,26 +457,34 @@ def check_mcp005(tools: List[Dict[str, Any]]) -> List[Finding]:
         for path, key, spec in _iter_properties(schema):
             if not _is_string(spec) or any(c in spec for c in _CONSTRAINTS):
                 continue
-            tokens = _norm(key).split("_")
-            last = tokens[-1] if tokens else ""
-            if last in _RISKY_STRONG or _norm(key) in _RISKY_STRONG:
-                severity = M
-            elif last in _RISKY_WEAK or _norm(key) in _RISKY_WEAK:
-                severity = L
-            else:
-                continue
-            out.append(_finding(
-                "MCP005", severity, subject, f"inputSchema.properties.{path}",
-                f"free-form string parameter '{path}' has no enum, pattern or maxLength",
-                "Unconstrained string for a risky parameter",
-            ))
+            norm = _norm(key)
+            last = norm.split("_")[-1] if norm else ""
+            if last in _RISKY_EXEC or norm in _RISKY_EXEC:
+                out.append(_finding(
+                    "MCP005", M, subject, f"inputSchema.properties.{path}",
+                    f"free-form string parameter '{path}' has no enum, pattern or maxLength",
+                    "Unconstrained string for a risky parameter",
+                ))
+            elif last in _RISKY_TARGET or norm in _RISKY_TARGET:
+                target_params.setdefault(path, []).append(name)
         props = schema.get("properties")
         if isinstance(props, dict) and props and schema.get("additionalProperties") is not False:
-            out.append(_finding(
-                "MCP005", L, subject, "inputSchema.additionalProperties",
-                "additionalProperties is not false; unexpected arguments are accepted",
-                "Input schema allows additional properties",
-            ))
+            open_tools.append(name)
+
+    total = len(tools)
+    for path in sorted(target_params):
+        names = target_params[path]
+        out.append(_finding(
+            "MCP005", L, "manifest", f"inputSchema.properties.{path}",
+            f"'{path}' is a free-form string (no enum, pattern or maxLength) in {len(set(names))} of {total} tools: {_name_list(names)}",
+            "Unconstrained string for a risky parameter",
+        ))
+    if open_tools:
+        out.append(_finding(
+            "MCP005", L, "manifest", "inputSchema.additionalProperties",
+            f"additionalProperties is not false in {len(set(open_tools))} of {total} tools: {_name_list(open_tools)}",
+            "Input schemas allow additional properties",
+        ))
     return out
 
 
@@ -529,6 +550,16 @@ def _reference_pattern(name: str) -> "re.Pattern[str]":
     return re.compile(rf"[`'\"]{esc}[`'\"]|(?<![\w-]){esc}\(\)|(?<![\w-]){esc}(?= (?:tool|function)\b)|\b(?:tool|function) {esc}(?![\w-])")
 
 
+_DEPRECATION = re.compile(r"\bdeprecat\w*", re.IGNORECASE)
+
+
+def _sentence(text: str, start: int, end: int) -> str:
+    """The sentence around a match: bounded by ., !, ? or a newline."""
+    lo = max((text.rfind(c, 0, start) for c in ".!?\n"), default=-1) + 1
+    hits = [i for i in (text.find(c, end) for c in ".!?\n") if i != -1]
+    return text[lo : min(hits) if hits else len(text)]
+
+
 def check_mcp007(tools: List[Dict[str, Any]]) -> List[Finding]:
     out: List[Finding] = []
     names = [tool_name(t, i) for i, t in enumerate(tools)]
@@ -545,7 +576,9 @@ def check_mcp007(tools: List[Dict[str, Any]]) -> List[Finding]:
                 m = patterns[other].search(text)
                 if m:
                     referenced = True
-                    out.append(_finding("MCP007", M, subject, field, snippet(text, m.start(), m.end()), f"Description references another tool: {other}"))
+                    # "DEPRECATED: use other_tool instead" is routine housekeeping, so lower severity.
+                    severity = L if _DEPRECATION.search(_sentence(text, m.start(), m.end())) else M
+                    out.append(_finding("MCP007", severity, subject, field, snippet(text, m.start(), m.end()), f"Description references another tool: {other}"))
                     break
         if referenced:
             continue

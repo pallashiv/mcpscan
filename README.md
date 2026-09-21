@@ -86,7 +86,7 @@ To accept a specific finding with a recorded reason, use an ignore file:
 {
   "ignore": [
     {"rule": "MCP004", "subject": "tool:run_shell_command", "reason": "Shell access is this tool's purpose; reviewed in TICKET-123"},
-    {"rule": "MCP005", "subject": "tool:read_*", "field": "inputSchema.properties.path*", "reason": "Path is validated server-side"}
+    {"rule": "MCP005", "subject": "manifest", "field": "inputSchema.properties.path", "reason": "Server restricts paths to its allowed directories"}
   ]
 }
 ```
@@ -106,9 +106,9 @@ To accept a specific finding with a recorded reason, use an ignore file:
 | MCP002 | HIGH | Invisible Unicode (categories Cf, Co, Cn and lone surrogates, excluding ZWJ) in metadata |
 | MCP003 | HIGH | References to sensitive files: `~/.ssh`, `.env`, `.aws/credentials`, `/etc/passwd`, `.npmrc`, ... |
 | MCP004 | HIGH / MEDIUM | Over-permissioned capability: command execution, raw SQL, secret access (high); filesystem write/delete, arbitrary URL fetch, outbound messaging (medium). Wording like "any file" escalates to high; a matching parameter name alone lowers severity one level |
-| MCP005 | MEDIUM / LOW | Weak input schema: free-form string for a risky parameter such as `path`, `command`, `url` without `enum`/`pattern`/`maxLength` (medium; `query`, `args` low); missing schema or `additionalProperties` not `false` (low) |
+| MCP005 | MEDIUM / LOW | Weak input schema: free-form string for an exec-like parameter such as `command`, `sql`, `script` (medium, per tool); for `path`, `url`, `host` and similar (low, once per manifest, since almost every file or HTTP tool has one); missing schema (low); `additionalProperties` not `false` (low, once per manifest) |
 | MCP006 | LOW | State-changing tool has neither `readOnlyHint` nor `destructiveHint` |
-| MCP007 | MEDIUM | Description references another tool (cross-tool shadowing), or steers the model away from other tools |
+| MCP007 | MEDIUM / LOW | Description references another tool (cross-tool shadowing), or steers the model away from other tools. A "DEPRECATED: use X instead" notice is low |
 | MCP008 | MEDIUM | Duplicate tool names, including names that differ only by case or `-`/`_` |
 | CFG001 | HIGH | Hardcoded secret in `env`, `headers`, args or a URL (secret-like key names and known token formats) |
 | CFG002 | HIGH | Remote server over plaintext `http://` / `ws://` on a non-local host |
@@ -128,7 +128,7 @@ src/mcpscan/
   suppress.py  Baseline and ignore files
   cli.py       argparse entrypoint
 action.yml     GitHub Action (composite); scripts/run-scan.sh is its scan step
-tests/         pytest; a positive and a negative test per rule
+tests/         pytest; a positive and a negative test per rule; fixtures/real/ holds real server manifests
 examples/      vulnerable_manifest.json, safe_manifest.json, vulnerable_config.json
 ```
 
