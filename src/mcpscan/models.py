@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import unicodedata
-from dataclasses import dataclass
+from dataclasses import dataclass, field as dc_field
 from enum import IntEnum
 from typing import Any, Dict, List, Tuple
 
@@ -88,13 +88,24 @@ class Finding:
         }
 
 
+@dataclass(frozen=True)
+class Suppressed:
+    """A finding hidden by an ignore rule or the baseline; counted, never silently dropped."""
+
+    finding: Finding
+    source: str  # "ignore" or "baseline"
+    reason: str
+
+
 @dataclass
 class ScanResult:
     path: str
     input_type: str  # "manifest", "config" or "manifest+config"
-    findings: List[Finding]
+    findings: List[Finding]  # active findings only; these drive the exit code
     tool_count: int = 0
     server_count: int = 0
+    suppressed: List[Suppressed] = dc_field(default_factory=list)
+    stale_baseline: int = 0  # baseline entries that no longer match any finding
 
     def counts(self) -> Dict[str, int]:
         counts = {s.label: 0 for s in sorted(Severity, reverse=True)}

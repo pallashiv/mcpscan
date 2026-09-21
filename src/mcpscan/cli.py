@@ -11,6 +11,7 @@ from . import __version__
 from .models import Severity
 from .report import RENDERERS, render_text
 from .scanner import ScanError, scan_file
+from .suppress import apply_suppressions, baseline_document, load_baseline, load_ignore
 
 EXIT_OK, EXIT_FINDINGS, EXIT_ERROR = 0, 1, 2
 
@@ -35,6 +36,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="exit 1 if any finding is at or above this severity (default: low, i.e. any finding)",
     )
     scan.add_argument("--output", metavar="FILE", help="write the report to FILE instead of stdout")
+    scan.add_argument("--ignore-file", metavar="FILE", help="JSON file of ignore rules; each needs a rule ID and a reason")
+    baseline = scan.add_mutually_exclusive_group()
+    baseline.add_argument("--baseline", metavar="FILE", help="hide findings already listed in FILE; only new findings count")
+    baseline.add_argument("--write-baseline", metavar="FILE", help="save the current findings to FILE and exit 0")
     return parser
 
 
@@ -48,6 +53,10 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     try:
         result = scan_file(args.path)
+        ignore = load_ignore(args.ignore_file) if args.ignore_file else None
+        baseline = load_baseline(args.baseline) if args.baseline else None
+        if ignore or baseline is not None:
+            result = apply_suppressions(result, ignore, baseline)
     except ScanError as exc:
         print(f"mcpscan: error: {exc}", file=sys.stderr)
         return EXIT_ERROR
@@ -68,6 +77,16 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"mcpscan: wrote {args.format} report to {args.output}", file=sys.stderr)
     else:
         sys.stdout.write(report)
+
+    if args.write_baseline:
+        try:
+            with open(args.write_baseline, "w", encoding="utf-8") as fh:
+                fh.write(baseline_document(result.findings))
+        except OSError as exc:
+            print(f"mcpscan: error: cannot write {args.write_baseline}: {exc}", file=sys.stderr)
+            return EXIT_ERROR
+        print(f"mcpscan: wrote baseline of {len(result.findings)} finding(s) to {args.write_baseline}", file=sys.stderr)
+        return EXIT_OK
 
     return EXIT_FINDINGS if result.exceeds(Severity.parse(args.fail_on)) else EXIT_OK
 

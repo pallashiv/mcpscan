@@ -18,6 +18,7 @@ pip install -e ".[dev]"   # development
 
 ```sh
 mcpscan scan <path> [--format text|json|markdown|sarif] [--fail-on low|medium|high|critical] [--output FILE]
+                     [--baseline FILE | --write-baseline FILE] [--ignore-file FILE]
 ```
 
 ```sh
@@ -33,6 +34,33 @@ mcpscan scan tools.json --format sarif --output mcpscan.sarif
 | 2 | Usage error, unreadable file, invalid JSON or unrecognised input |
 
 Text output is colored on a terminal; set `NO_COLOR` to disable. Text from scanned files is escaped in every format, so a hostile manifest cannot inject terminal escape sequences, and values that look like secrets are masked in evidence.
+
+### Adopting mcpscan on an existing project
+
+Save today's findings as a baseline, commit it, and gate CI on new findings only:
+
+```sh
+mcpscan scan tools.json --write-baseline mcpscan-baseline.json   # writes the file, exits 0
+mcpscan scan tools.json --baseline mcpscan-baseline.json          # exits 1 only for findings not in the baseline
+```
+
+- Findings match on rule, subject, field and title, not on the evidence text, so editing a description does not resurface an accepted finding.
+- Suppressed findings are never dropped silently: the summary shows a count, and JSON and SARIF output list them (SARIF marks them as suppressed).
+- If fixed findings leave stale entries in the baseline, the summary says so; regenerate with `--write-baseline`.
+- Use one baseline per scanned file: subjects such as `server:github` can repeat across files.
+
+To accept a specific finding with a recorded reason, use an ignore file:
+
+```json
+{
+  "ignore": [
+    {"rule": "MCP004", "subject": "tool:run_shell_command", "reason": "Shell access is this tool's purpose; reviewed in TICKET-123"},
+    {"rule": "MCP005", "subject": "tool:read_*", "field": "inputSchema.properties.path*", "reason": "Path is validated server-side"}
+  ]
+}
+```
+
+`subject` and `field` are optional globs (default `*`). `reason` is required, and unknown rule IDs or keys are rejected so typos cannot silently disable a check. Ignore rules take precedence over the baseline.
 
 ### Supported inputs
 
@@ -66,6 +94,7 @@ src/mcpscan/
   rules.py     One pure function per rule; rule metadata (RULE_INFO)
   scanner.py   Detects input type and runs the rules
   report.py    Renderers: text, JSON, Markdown, SARIF 2.1.0
+  suppress.py  Baseline and ignore files
   cli.py       argparse entrypoint
 tests/         pytest; a positive and a negative test per rule
 examples/      vulnerable_manifest.json, safe_manifest.json, vulnerable_config.json
@@ -82,7 +111,7 @@ A new rule needs a positive and a negative test, a row in the table above, and a
 
 ## Not yet built
 
-Live stdio/HTTP introspection, rug-pull detection (hashing tool metadata across runs), a GitHub Action, a baseline/ignore file, and server-source scanning.
+Live stdio/HTTP introspection, rug-pull detection (hashing tool metadata across runs), a GitHub Action, and server-source scanning.
 
 ## License
 

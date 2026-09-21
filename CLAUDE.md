@@ -17,6 +17,7 @@ src/mcpscan/
   rules.py     One function per rule; pure functions, no I/O; RULE_INFO metadata
   scanner.py   Detects input type (tool manifest vs client config) and runs rules
   report.py    Renderers: terminal (color optional), JSON, Markdown, SARIF
+  suppress.py  Baseline (--baseline/--write-baseline) and ignore-file (--ignore-file) handling
   cli.py       argparse entrypoint: `mcpscan scan <path>`
 tests/         pytest; one test per rule (a positive and a negative case)
 examples/      vulnerable_manifest.json, safe_manifest.json, vulnerable_config.json
@@ -49,7 +50,9 @@ Config rules:
 
 ## CLI contract
 mcpscan scan <path> [--format text|json|markdown|sarif] [--fail-on low|medium|high|critical] [--output FILE]
+                     [--baseline FILE | --write-baseline FILE] [--ignore-file FILE]
 Exit codes: 0 = clean (or below threshold), 1 = findings at/above --fail-on (default: low), 2 = usage/parse error.
+Suppressed findings (baseline/ignore) never affect the exit code but are always counted in reports. Ignore entries require a `reason`.
 
 ## Commands
 - Install dev: pip install -e ".[dev]"
@@ -64,4 +67,4 @@ Exit codes: 0 = clean (or below threshold), 1 = findings at/above --fail-on (def
 
 ## Roadmap (do not build until asked)
 Live stdio/HTTP introspection, rug-pull detection (hash tool metadata across runs),
-GitHub Action, baseline/ignore file, server-source scanning.
+GitHub Action, server-source scanning.

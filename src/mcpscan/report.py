@@ -21,14 +21,38 @@ _DIM, _RESET = "\x1b[2m", "\x1b[0m"
 _INPUT_LABELS = {"manifest": "tool manifest", "config": "client config", "manifest+config": "manifest + config"}
 
 
+def _suppression_note(result: ScanResult) -> str:
+    if not result.suppressed:
+        return ""
+    by_source = {"baseline": 0, "ignore": 0}
+    for s in result.suppressed:
+        by_source[s.source] += 1
+    parts = []
+    if by_source["baseline"]:
+        parts.append(f"{by_source['baseline']} in baseline")
+    if by_source["ignore"]:
+        parts.append(f"{by_source['ignore']} ignored")
+    return f"{len(result.suppressed)} suppressed: {', '.join(parts)}"
+
+
 def _summary_line(result: ScanResult) -> str:
+    note = _suppression_note(result)
     if not result.findings:
         if result.input_type == "config" and result.server_count == 0:
-            return "No MCP servers configured; nothing to scan."
-        return "No findings."
-    parts = [f"{n} {label}" for label, n in result.counts().items() if n]
-    total = len(result.findings)
-    return f"{total} finding{'s' if total != 1 else ''} ({', '.join(parts)})"
+            line = "No MCP servers configured; nothing to scan."
+        else:
+            line = "No findings"
+            line += f" ({note})." if note else "."
+    else:
+        parts = [f"{n} {label}" for label, n in result.counts().items() if n]
+        total = len(result.findings)
+        line = f"{total} finding{'s' if total != 1 else ''} ({', '.join(parts)})"
+        if note:
+            line += f"; {note}"
+    if result.stale_baseline:
+        n = result.stale_baseline
+        line += f"\nBaseline has {n} stale entr{'ies' if n != 1 else 'y'} (fixed or renamed); regenerate it with --write-baseline."
+    return line
 
 
 def _scanned(result: ScanResult) -> str:
@@ -65,8 +89,12 @@ def render_json(result: ScanResult) -> str:
         "input_type": result.input_type,
         "tools_scanned": result.tool_count,
         "servers_scanned": result.server_count,
-        "summary": {"total": len(result.findings), **result.counts()},
+        "summary": {"total": len(result.findings), **result.counts(), "suppressed": len(result.suppressed)},
+        "stale_baseline_entries": result.stale_baseline,
         "findings": [f.to_dict() for f in result.findings],
+        "suppressed": [
+            {**s.finding.to_dict(), "suppressed_by": s.source, "reason": s.reason} for s in result.suppressed
+        ],
     }
     return json.dumps(doc, indent=2, ensure_ascii=True) + "\n"
 
@@ -147,6 +175,10 @@ def render_sarif(result: ScanResult) -> str:
     results: List[Dict[str, Any]] = []
     for f in result.findings:
         results.append(_sarif_result(f, result.path, rule_ids.index(f.rule_id)))
+    for s in result.suppressed:
+        entry = _sarif_result(s.finding, result.path, rule_ids.index(s.finding.rule_id))
+        entry["suppressions"] = [{"kind": "external", "justification": s.reason}]
+        results.append(entry)
     doc = {
         "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
         "version": "2.1.0",
