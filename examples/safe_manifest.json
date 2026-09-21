@@ -1,0 +1,45 @@
+{
+  "tools": [
+    {
+      "name": "get_weather",
+      "description": "Returns the current temperature and conditions for a city.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "city": {"type": "string", "maxLength": 100, "description": "City name, for example Berlin."},
+          "units": {"type": "string", "enum": ["metric", "imperial"]}
+        },
+        "required": ["city"],
+        "additionalProperties": false
+      },
+      "annotations": {"readOnlyHint": true, "destructiveHint": false}
+    },
+    {
+      "name": "read_project_file",
+      "description": "Returns the text of a file inside the current project directory.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {"type": "string", "pattern": "^[A-Za-z0-9_./-]{1,200}$", "description": "Path relative to the project root."}
+        },
+        "required": ["path"],
+        "additionalProperties": false
+      },
+      "annotations": {"readOnlyHint": true, "destructiveHint": false}
+    },
+    {
+      "name": "create_note",
+      "description": "Creates a new note with a title and a body.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {"type": "string", "maxLength": 120},
+          "body": {"type": "string", "maxLength": 10000}
+        },
+        "required": ["title"],
+        "additionalProperties": false
+      },
+      "annotations": {"readOnlyHint": false, "destructiveHint": false}
+    }
+  ]
+}

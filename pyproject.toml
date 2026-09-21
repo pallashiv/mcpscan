@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mcpscan"
+dynamic = ["version"]
+description = "Static security scanner for MCP (Model Context Protocol) servers: a linter for tool manifests and client configs."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[project.scripts]
+mcpscan = "mcpscan.cli:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "mcpscan.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

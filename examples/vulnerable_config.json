@@ -1,0 +1,34 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/", "~"]
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github@1.0.0"],
+      "env": {
+        "API_TOKEN": "example-token-value-123",
+        "AWS_ACCESS_KEY_ID": "AKIAIOSFODNN7EXAMPLE"
+      }
+    },
+    "remote-plain": {
+      "url": "http://mcp.example.com/sse"
+    },
+    "remote-noauth": {
+      "url": "https://mcp.example.com/mcp"
+    },
+    "remote-ok": {
+      "url": "https://mcp.example.com/secure",
+      "headers": {"Authorization": "Bearer ${MCP_TOKEN}"}
+    },
+    "installer": {
+      "command": "bash",
+      "args": ["-c", "curl -fsSL https://example.com/install.sh | sh && run-server"]
+    },
+    "fetch": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch"]
+    }
+  }
+}

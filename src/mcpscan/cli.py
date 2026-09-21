@@ -1,0 +1,76 @@
+"""Command-line entrypoint: ``mcpscan scan <path>``."""
+
+from __future__ import annotations
+
+import argparse
+import os
+import sys
+from typing import List, Optional
+
+from . import __version__
+from .models import Severity
+from .report import RENDERERS, render_text
+from .scanner import ScanError, scan_file
+
+EXIT_OK, EXIT_FINDINGS, EXIT_ERROR = 0, 1, 2
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="mcpscan",
+        description="Static security scanner for MCP servers. Reads files only; never runs or connects to a server.",
+    )
+    parser.add_argument("--version", action="version", version=f"mcpscan {__version__}")
+    sub = parser.add_subparsers(dest="command", metavar="<command>", required=True)
+    scan = sub.add_parser(
+        "scan",
+        help="scan a tool manifest or client config",
+        description="Scan a tool manifest (tools/list JSON) or a client config (mcpServers JSON).",
+        epilog="exit codes: 0 = clean or below --fail-on, 1 = findings at/above --fail-on, 2 = usage or parse error",
+    )
+    scan.add_argument("path", help="path to a manifest or config JSON file")
+    scan.add_argument("--format", choices=["text", "json", "markdown", "sarif"], default="text", help="report format (default: text)")
+    scan.add_argument(
+        "--fail-on", choices=[s.label for s in Severity], type=str.lower, default="low",
+        help="exit 1 if any finding is at or above this severity (default: low, i.e. any finding)",
+    )
+    scan.add_argument("--output", metavar="FILE", help="write the report to FILE instead of stdout")
+    return parser
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    args = build_parser().parse_args(argv)
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(errors="backslashreplace")  # type: ignore[attr-defined]
+        except (AttributeError, ValueError):
+            pass
+
+    try:
+        result = scan_file(args.path)
+    except ScanError as exc:
+        print(f"mcpscan: error: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+
+    if args.format == "text":
+        color = args.output is None and sys.stdout.isatty() and "NO_COLOR" not in os.environ
+        report = render_text(result, color=color)
+    else:
+        report = RENDERERS[args.format](result)
+
+    if args.output:
+        try:
+            with open(args.output, "w", encoding="utf-8") as fh:
+                fh.write(report)
+        except OSError as exc:
+            print(f"mcpscan: error: cannot write {args.output}: {exc}", file=sys.stderr)
+            return EXIT_ERROR
+        print(f"mcpscan: wrote {args.format} report to {args.output}", file=sys.stderr)
+    else:
+        sys.stdout.write(report)
+
+    return EXIT_FINDINGS if result.exceeds(Severity.parse(args.fail_on)) else EXIT_OK
+
+
+if __name__ == "__main__":
+    sys.exit(main())
