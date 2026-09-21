@@ -117,6 +117,10 @@ To accept a specific finding with a recorded reason, use an ignore file:
 | CFG005 | HIGH / MEDIUM | Launched through a shell or `curl \| sh` (high); a plain shell wrapper such as `cmd /c npx ...` is medium |
 | CFG006 | HIGH | Filesystem root of `/`, `~`, `$HOME`, a whole home directory or a drive root |
 
+## Security and privacy
+
+mcpscan reads one JSON file you point it at and prints a report. It makes no network connections, runs no other programs, has no runtime dependencies, and never starts or connects to the servers it scans. A test enforces this. Secrets are masked in reports. It is early, unaudited software with heuristic detection, so a clean result is not proof of safety. See [SECURITY.md](SECURITY.md) for the full picture, how to report a vulnerability, how to use the Action safely (pin a commit SHA), and why capturing tool lists means running third-party code.
+
 ## Layout
 
 ```

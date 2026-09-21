@@ -9,6 +9,7 @@ Goal: a developer-first "linter for MCP servers" that runs locally and in CI.
 - Prefer few false positives over exhaustive coverage. When unsure, lower severity.
 - Static analysis only in v0.1. Never execute or connect to the servers being scanned.
 - Deterministic output (sorted findings) so results are diffable in CI.
+- No network, no subprocess/eval, no runtime deps: enforced by tests/test_no_network.py (adding an import means editing its allow-list on purpose). See SECURITY.md.
 - Scanned files are untrusted: evidence is escaped (no terminal escapes) and secrets are masked in every report.
 
 ## Layout
