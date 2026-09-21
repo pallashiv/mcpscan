@@ -83,3 +83,7 @@ A new rule needs a positive and a negative test, a row in the table above, and a
 ## Not yet built
 
 Live stdio/HTTP introspection, rug-pull detection (hashing tool metadata across runs), a GitHub Action, a baseline/ignore file, and server-source scanning.
+
+## License
+
+[MIT](LICENSE)
