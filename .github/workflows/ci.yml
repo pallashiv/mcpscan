@@ -26,3 +26,40 @@ jobs:
         run: |
           mcpscan scan examples/safe_manifest.json
           mcpscan scan examples/vulnerable_manifest.json --format sarif --output /dev/null --fail-on critical || test $? -eq 1
+
+  action:
+    name: action (self-test)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Clean manifest passes
+        uses: ./
+        with:
+          path: examples/safe_manifest.json
+
+      - name: Vulnerable manifest fails the job
+        id: vulnerable
+        uses: ./
+        continue-on-error: true
+        with:
+          path: examples/vulnerable_manifest.json
+          sarif-file: vulnerable.sarif
+
+      - name: Check the failure was reported and SARIF was written
+        env:
+          OUTCOME: ${{ steps.vulnerable.outcome }}
+          EXIT_CODE: ${{ steps.vulnerable.outputs.exit-code }}
+        run: |
+          test "$OUTCOME" = failure
+          test "$EXIT_CODE" = 1
+          test -s vulnerable.sarif
+
+      - name: Create a baseline
+        run: mcpscan scan examples/vulnerable_manifest.json --write-baseline baseline.json
+
+      - name: Baseline lets the same manifest pass
+        uses: ./
+        with:
+          path: examples/vulnerable_manifest.json
+          baseline: baseline.json

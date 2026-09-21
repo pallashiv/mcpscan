@@ -35,6 +35,37 @@ mcpscan scan tools.json --format sarif --output mcpscan.sarif
 
 Text output is colored on a terminal; set `NO_COLOR` to disable. Text from scanned files is escaped in every format, so a hostile manifest cannot inject terminal escape sequences, and values that look like secrets are masked in evidence.
 
+### GitHub Action
+
+```yaml
+permissions:
+  contents: read
+  security-events: write   # only needed for upload-sarif
+
+jobs:
+  mcpscan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pallashiv/mcpscan@main
+        with:
+          path: claude_desktop_config.json
+          fail-on: high
+          upload-sarif: true
+```
+
+| Input | Default | Meaning |
+| --- | --- | --- |
+| `path` | required | Manifest or config JSON file, relative to the workspace |
+| `fail-on` | `low` | Fail the job at or above this severity |
+| `baseline` | | Baseline file; only findings not in it can fail the job |
+| `ignore-file` | | JSON ignore file (rule ID plus a required reason per entry) |
+| `sarif-file` | `mcpscan.sarif` | Where to write the SARIF report |
+| `upload-sarif` | `false` | Upload the SARIF to code scanning (results appear in the Security tab) |
+| `python-version` | `3.12` | Python used to run mcpscan |
+
+The action prints the text report in the job log, uploads SARIF (if enabled) before failing the job, and sets an `exit-code` output (0, 1 or 2, as for the CLI). To scan several files, add one step per file with a different `sarif-file`; give each upload a distinct file so results do not overwrite each other. The action installs mcpscan from the ref you pin, so pin a tag or commit SHA once releases exist.
+
 ### Adopting mcpscan on an existing project
 
 Save today's findings as a baseline, commit it, and gate CI on new findings only:
@@ -96,6 +127,7 @@ src/mcpscan/
   report.py    Renderers: text, JSON, Markdown, SARIF 2.1.0
   suppress.py  Baseline and ignore files
   cli.py       argparse entrypoint
+action.yml     GitHub Action (composite); scripts/run-scan.sh is its scan step
 tests/         pytest; a positive and a negative test per rule
 examples/      vulnerable_manifest.json, safe_manifest.json, vulnerable_config.json
 ```
@@ -111,7 +143,7 @@ A new rule needs a positive and a negative test, a row in the table above, and a
 
 ## Not yet built
 
-Live stdio/HTTP introspection, rug-pull detection (hashing tool metadata across runs), a GitHub Action, and server-source scanning.
+Live stdio/HTTP introspection, rug-pull detection (hashing tool metadata across runs), and server-source scanning.
 
 ## License
 

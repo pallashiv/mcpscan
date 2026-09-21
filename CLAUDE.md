@@ -19,6 +19,7 @@ src/mcpscan/
   report.py    Renderers: terminal (color optional), JSON, Markdown, SARIF
   suppress.py  Baseline (--baseline/--write-baseline) and ignore-file (--ignore-file) handling
   cli.py       argparse entrypoint: `mcpscan scan <path>`
+action.yml    GitHub Action (composite); scripts/run-scan.sh is its scan step
 tests/         pytest; one test per rule (a positive and a negative case)
 examples/      vulnerable_manifest.json, safe_manifest.json, vulnerable_config.json
 
@@ -67,4 +68,4 @@ Suppressed findings (baseline/ignore) never affect the exit code but are always 
 
 ## Roadmap (do not build until asked)
 Live stdio/HTTP introspection, rug-pull detection (hash tool metadata across runs),
-GitHub Action, server-source scanning.
+server-source scanning.
