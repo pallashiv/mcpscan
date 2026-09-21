@@ -30,7 +30,7 @@ RULE_INFO: Dict[str, RuleInfo] = {
     r.rule_id: r
     for r in (
         RuleInfo(
-            "MCP001", "Tool poisoning / prompt injection", (C, H),
+            "MCP001", "Tool poisoning / prompt injection", (C, H, M),
             "Instructions aimed at the model hidden in a tool's name, description or schema text.",
             "Remove model-directed instructions from tool metadata. Metadata should describe what "
             "the tool does and nothing else; do not install tools from untrusted sources.",
@@ -42,7 +42,7 @@ RULE_INFO: Dict[str, RuleInfo] = {
             "Strip invisible characters from tool metadata and investigate how they got there.",
         ),
         RuleInfo(
-            "MCP003", "Sensitive file reference", (H,),
+            "MCP003", "Sensitive file reference", (H, M),
             "Tool metadata mentions credential or secret files (~/.ssh, .env, .aws/credentials, ...).",
             "Tools should not reference credential files. If access is legitimate, document it "
             "outside model-visible metadata and scope it tightly.",
@@ -70,9 +70,10 @@ RULE_INFO: Dict[str, RuleInfo] = {
         ),
         RuleInfo(
             "MCP007", "Cross-tool reference (shadowing)", (M, L),
-            "A tool description refers to another tool, a common tool-shadowing technique. "
-            "Deprecation notices are reported at low severity.",
-            "Tool descriptions should be self-contained. Remove references to other tools.",
+            "A description refers to another tool (low, once per manifest: usually workflow guidance), "
+            "or steers the model away from other tools (medium).",
+            "Tool descriptions should be self-contained. If a reference is only workflow guidance it is "
+            "harmless; references that redirect the model away from other tools are not.",
         ),
         RuleInfo(
             "MCP008", "Duplicate tool name", (M,),
@@ -217,8 +218,10 @@ _INJECTION: Tuple[Tuple[str, Severity, "re.Pattern[str]"], ...] = (
         _rx(r"\b(?:new|updated|additional|real|actual|secret)\s+instructions?\s*:"),
     ),
     (
-        "Forced tool call in tool metadata", H,
-        _rx(r"\b(?:you (?:must|should|need to)|always|first)\b[^.\n]{0,40}\b(?:call|invoke|execute)\b[^.\n]{0,40}\b(?:tool|function)\b"),
+        # Sequencing ("call resolve-id first") is common in legitimate servers, and "this tool"
+        # is the tool itself, so this stays at MEDIUM and never fires on "call this tool".
+        "Forced tool call in tool metadata", M,
+        _rx(r"\b(?:you (?:must|should|need to)|always|first)\b[^.\n]{0,40}\b(?:call|invoke|execute)\s+(?!this\b|the same\b)[^.\n]{0,40}\b(?:tool|function)\b"),
     ),
 )
 
@@ -276,17 +279,19 @@ def check_mcp002(tools: List[Dict[str, Any]]) -> List[Finding]:
 # MCP003: sensitive file references
 # --------------------------------------------------------------------------- #
 
-_SENSITIVE_FILES: Tuple[Tuple[str, "re.Pattern[str]"], ...] = (
-    ("SSH keys or config", _rx(r"(?<![\w])\.ssh\b|\bid_(?:rsa|dsa|ecdsa|ed25519)\b|\bauthorized_keys\b")),
-    ("dotenv file", _rx(r"(?<![\w])\.env(?:\.[\w-]+)?\b")),
-    ("AWS credentials", _rx(r"(?<![\w])\.aws\b(?:/\w+)?|\baws_secret_access_key\b")),
-    ("package registry credentials", _rx(r"(?<![\w])\.(?:npmrc|pypirc|netrc|git-credentials)\b")),
-    ("cloud/CLI config", _rx(r"(?<![\w])\.(?:kube/config|docker/config\.json|config/gcloud|azure)\b")),
-    ("GPG keyring", _rx(r"(?<![\w])\.gnupg\b")),
-    ("system password files", _rx(r"/etc/(?:passwd|shadow|sudoers)\b")),
-    ("shell history", _rx(r"(?<![\w])\.(?:bash|zsh)_history\b")),
-    ("credentials file", _rx(r"\b(?:credentials|secrets?)\.(?:json|ya?ml)\b")),
-    ("OS keychain", _rx(r"Library/Keychains|\bkeychain\b")),
+# .env and generic "credentials.json" names show up in ordinary dev-tool docs (search examples,
+# "loads .env"), so they are MEDIUM. Files that only ever hold secrets stay HIGH.
+_SENSITIVE_FILES: Tuple[Tuple[str, Severity, "re.Pattern[str]"], ...] = (
+    ("SSH keys or config", H, _rx(r"(?<![\w])\.ssh\b|\bid_(?:rsa|dsa|ecdsa|ed25519)\b|\bauthorized_keys\b")),
+    ("dotenv file", M, _rx(r"(?<![\w])\.env(?:\.[\w-]+)?\b")),
+    ("AWS credentials", H, _rx(r"(?<![\w])\.aws\b(?:/\w+)?|\baws_secret_access_key\b")),
+    ("package registry credentials", H, _rx(r"(?<![\w])\.(?:npmrc|pypirc|netrc|git-credentials)\b")),
+    ("cloud/CLI config", H, _rx(r"(?<![\w])\.(?:kube/config|docker/config\.json|config/gcloud|azure)\b")),
+    ("GPG keyring", H, _rx(r"(?<![\w])\.gnupg\b")),
+    ("system password files", H, _rx(r"/etc/(?:passwd|shadow|sudoers)\b")),
+    ("shell history", H, _rx(r"(?<![\w])\.(?:bash|zsh)_history\b")),
+    ("credentials file", M, _rx(r"\b(?:credentials|secrets?)\.(?:json|ya?ml)\b")),
+    ("OS keychain", H, _rx(r"Library/Keychains|\bkeychain\b")),
 )
 
 
@@ -296,13 +301,13 @@ def check_mcp003(tools: List[Dict[str, Any]]) -> List[Finding]:
         subject = f"tool:{tool_name(tool, i)}"
         seen = set()
         for field, text in iter_text(tool):
-            for label, rx in _SENSITIVE_FILES:
+            for label, severity, rx in _SENSITIVE_FILES:
                 if label in seen:
                     continue
                 m = rx.search(text)
                 if m:
                     seen.add(label)
-                    out.append(_finding("MCP003", H, subject, field, snippet(text, m.start(), m.end()), f"Reference to sensitive file: {label}"))
+                    out.append(_finding("MCP003", severity, subject, field, snippet(text, m.start(), m.end()), f"Reference to sensitive file: {label}"))
     return out
 
 
@@ -322,7 +327,7 @@ class _Capability(NamedTuple):
 _CAPABILITIES: Tuple[_Capability, ...] = (
     _Capability(
         "command execution", H,
-        _rx(r"(?:^|_)(?:exec|execute|run)_(?:command|cmd|shell|bash|script|code|process)(?:_|$)|(?:^|_)(?:shell|bash|powershell|terminal|subprocess|eval)(?:_|$)|^(?:exec|execute|run)$"),
+        _rx(r"(?:^|_)(?:exec|execute|run|start|spawn|launch)_(?:command|cmd|shell|bash|script|code|process|terminal|subprocess)(?:_|$)|(?:^|_)(?:shell|bash|powershell|terminal|subprocess|eval)(?:_|$)|^(?:exec|execute|run)$"),
         _rx(r"\b(?:execut\w*|run\w*)\s+(?:an?\s+|any\s+|arbitrary\s+|the\s+)?(?:shell|bash|system|terminal|os)\s+(?:commands?|scripts?|code)\b|\bexecut\w*\s+(?:any|arbitrary)\s+\w+"),
         _rx(r"(?:command|cmd|shell_command|command_line|commandline|bash|shell)\Z"),
     ),
@@ -370,6 +375,17 @@ def _param_names(tool: Dict[str, Any]) -> List[str]:
     return [str(k) for k in props] if isinstance(props, dict) else []
 
 
+_NEGATION = re.compile(r"\b(?:never|not|don'?t|do not|avoid|without|cannot|can'?t)\b[^.\n]*\Z", re.IGNORECASE)
+
+
+def _first_affirmative(rx: "re.Pattern[str]", text: str) -> "Optional[re.Match[str]]":
+    """First match that is not negated: "NEVER overwrite the original file" is a warning, not a capability."""
+    for m in rx.finditer(text):
+        if not _NEGATION.search(text[max(0, m.start() - 25) : m.start()]):
+            return m
+    return None
+
+
 def check_mcp004(tools: List[Dict[str, Any]]) -> List[Finding]:
     out: List[Finding] = []
     for i, tool in enumerate(tools):
@@ -377,14 +393,14 @@ def check_mcp004(tools: List[Dict[str, Any]]) -> List[Finding]:
         norm = _norm(name)
         desc = _str(tool.get("description"))
         params = _param_names(tool)
-        broad = bool(_BROAD.search(desc))
+        broad = _BROAD.search(desc)
         for cap in _CAPABILITIES:
             severity = cap.severity
             field = ""
             if cap.name.search(norm):
                 field, evidence = "name", f"tool name '{name}'"
             else:
-                m = cap.desc.search(desc)
+                m = _first_affirmative(cap.desc, desc)
                 if m:
                     field, evidence = "description", snippet(desc, m.start(), m.end())
                 else:
@@ -394,8 +410,9 @@ def check_mcp004(tools: List[Dict[str, Any]]) -> List[Finding]:
                     # A parameter name alone is weaker evidence: drop one level.
                     field, evidence = "inputSchema", f"parameter '{hit}'"
                     severity = Severity(max(int(L), int(severity) - 1))
-            if broad and field != "inputSchema":
+            if broad and field != "inputSchema" and severity < H:
                 severity = Severity(min(int(H), int(severity) + 1))
+                evidence += f" (raised: description says '{broad.group(0)}')"
             out.append(_finding("MCP004", severity, f"tool:{name}", field, evidence, f"Over-permissioned capability: {cap.label}"))
     return out
 
@@ -510,31 +527,33 @@ def _looks_state_changing(name: str) -> bool:
 
 
 def check_mcp006(tools: List[Dict[str, Any]]) -> List[Finding]:
-    out: List[Finding] = []
+    """One finding per manifest: servers usually lack annotations on all their write tools at once."""
+    missing: List[str] = []
     for i, tool in enumerate(tools):
         name = tool_name(tool, i)
         if not _looks_state_changing(name):
             continue
         ann = tool.get("annotations")
-        ann = ann if isinstance(ann, dict) else {}
-        if "readOnlyHint" in ann or "destructiveHint" in ann:
+        if isinstance(ann, dict) and ("readOnlyHint" in ann or "destructiveHint" in ann):
             continue
-        present = ", ".join(sorted(str(k) for k in ann)) or "none"
-        out.append(_finding(
-            "MCP006", L, f"tool:{name}", "annotations",
-            f"tool name '{name}' suggests it changes state; annotations present: {present}",
-            "State-changing tool lacks readOnlyHint/destructiveHint",
-        ))
-    return out
+        missing.append(name)
+    if not missing:
+        return []
+    return [_finding(
+        "MCP006", L, "manifest", "annotations",
+        f"{len(set(missing))} of {len(tools)} tools look state-changing but declare neither hint: {_name_list(missing)}",
+        "State-changing tools lack readOnlyHint/destructiveHint",
+    )]
 
 
 # --------------------------------------------------------------------------- #
 # MCP007: cross-tool references (shadowing)
 # --------------------------------------------------------------------------- #
 
+# "instead of / never use ... tool", not counting "this tool" (a description talking about itself).
 _SHADOW_PHRASES = (
-    _rx(r"\b(?:instead of|rather than|in place of|replaces?|overrides?|supersedes?|takes? precedence over|shadows?)\b[^.\n]{0,40}\b(?:tools?|functions?)\b"),
-    _rx(r"\b(?:do not|don't|never|stop)\s+(?:use|using|call|calling)\b[^.\n]{0,40}\b(?:tools?|functions?)\b"),
+    _rx(r"\b(?:instead of|rather than|in place of|replaces?|overrides?|supersedes?|takes? precedence over|shadows?)\s+(?!this\b|the same\b)[^.\n]{0,40}\b(?:tools?|functions?)\b"),
+    _rx(r"\b(?:do not|don't|never|stop)\s+(?:use|using|call|calling)\s+(?!this\b|the same\b|it\b)[^.\n]{0,40}\b(?:tools?|functions?)\b"),
 )
 
 
@@ -561,32 +580,32 @@ def _sentence(text: str, start: int, end: int) -> str:
 
 
 def check_mcp007(tools: List[Dict[str, Any]]) -> List[Finding]:
+    """References to sibling tools are routine workflow guidance ("then call X"), so they are
+    reported once per manifest at LOW. Phrases that steer the model away from other tools stay
+    MEDIUM per tool."""
     out: List[Finding] = []
     names = [tool_name(t, i) for i, t in enumerate(tools)]
     patterns = {n: _reference_pattern(n) for n in set(names)}
+    refs: List[Tuple[str, str]] = []  # (tool, referenced tool)
     for i, tool in enumerate(tools):
         me = names[i]
         subject = f"tool:{me}"
         texts = [(f, t) for f, t in iter_text(tool, include_keys=False) if f != "name"]
-        referenced = False
         for other in sorted(patterns):
-            if other == me:
-                continue
-            for field, text in texts:
-                m = patterns[other].search(text)
-                if m:
-                    referenced = True
-                    # "DEPRECATED: use other_tool instead" is routine housekeeping, so lower severity.
-                    severity = L if _DEPRECATION.search(_sentence(text, m.start(), m.end())) else M
-                    out.append(_finding("MCP007", severity, subject, field, snippet(text, m.start(), m.end()), f"Description references another tool: {other}"))
-                    break
-        if referenced:
-            continue
+            if other != me and any(patterns[other].search(text) for _, text in texts):
+                refs.append((me, other))
         for field, text in texts:
             hit = next((m for m in (rx.search(text) for rx in _SHADOW_PHRASES) if m), None)
             if hit:
                 out.append(_finding("MCP007", M, subject, field, snippet(text, hit.start(), hit.end()), "Description steers the model away from or over other tools"))
                 break
+    if refs:
+        examples = ", ".join(f"{a} \u2192 {b}" for a, b in sorted(refs)[:3]) + (f", +{len(refs) - 3} more" if len(refs) > 3 else "")
+        out.append(_finding(
+            "MCP007", L, "manifest", "description",
+            f"{len(refs)} reference(s) to other tools across {len({a for a, _ in refs})} of {len(tools)} tools: {examples}",
+            "Descriptions reference other tools",
+        ))
     return out
 
 

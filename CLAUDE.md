@@ -21,7 +21,8 @@ src/mcpscan/
   cli.py       argparse entrypoint: `mcpscan scan <path>`
 action.yml    GitHub Action (composite); scripts/run-scan.sh is its scan step
 tests/         pytest; one test per rule (a positive and a negative case);
-               fixtures/real/ = real manifests from legitimate servers, guarding against false positives
+               fixtures/real/ = real manifests from 8 legitimate servers, guarding against false positives.
+               Any rule change must keep tests/test_real_manifests.py sensible; re-scan real servers when tuning.
 examples/      vulnerable_manifest.json, safe_manifest.json, vulnerable_config.json
 
 ## Inputs supported
@@ -32,17 +33,20 @@ examples/      vulnerable_manifest.json, safe_manifest.json, vulnerable_config.j
 Manifest rules:
 - MCP001 Tool poisoning / prompt injection in name, description, or schema text
   (instruction override, hidden <IMPORTANT> tags, concealment from user,
-  forced tool calls, exfiltration directives). CRITICAL/HIGH.
+  forced tool calls, exfiltration directives). CRITICAL/HIGH; forced tool call is MEDIUM
+  (legit servers sequence tools) and never fires on "call this tool".
 - MCP002 Invisible Unicode (categories Cf/Co/Cn/Cs, excluding ZWJ) in metadata. HIGH.
-- MCP003 References to sensitive files (~/.ssh, .env, .aws/credentials...). HIGH.
+- MCP003 References to sensitive files. HIGH (~/.ssh, .aws/credentials...); MEDIUM for .env-style names.
 - MCP004 Over-permissioned capability (command exec, fs write/delete, raw SQL,
-  arbitrary URL fetch, secret access, outbound messaging). MEDIUM/HIGH.
+  arbitrary URL fetch, secret access, outbound messaging). MEDIUM/HIGH. Negated text is ignored;
+  broad wording ("any file") raises severity and the evidence says so.
 - MCP005 Weak input schema. Exec-like params (command, sql, script...) without
   enum/pattern/maxLength: MEDIUM per tool. Target params (path, url, host...) and
   additionalProperties not false: LOW, ONE finding per manifest (subject "manifest") to avoid noise.
   Missing schema: LOW per tool.
-- MCP006 State-changing tool lacks readOnlyHint/destructiveHint annotations. LOW.
-- MCP007 Description references another tool (cross-tool shadowing). MEDIUM (LOW for deprecation notices).
+- MCP006 State-changing tools lack readOnlyHint/destructiveHint annotations. LOW, ONE finding per manifest.
+- MCP007 Cross-tool shadowing. Steering away from other tools ("use this instead of X tool"): MEDIUM per tool.
+  References to sibling tools (workflow guidance): LOW, ONE finding per manifest.
 - MCP008 Duplicate tool names. MEDIUM.
 Config rules:
 - CFG001 Hardcoded secret in env/headers/args/URL. HIGH.

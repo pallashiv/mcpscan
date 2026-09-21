@@ -82,7 +82,7 @@ def test_missing_baseline_rejected(tmp_path):
 
 def test_ignore_by_rule_and_subject_glob(tmp_path):
     ignore = load_ignore(write(tmp_path / "i.json", {"ignore": [
-        {"rule": "mcp006", "subject": "tool:run_*", "reason": "annotations tracked in TICKET-1"}]}))
+        {"rule": "mcp006", "subject": "manif*", "reason": "annotations tracked in TICKET-1"}]}))
     result = scan_data(TOOLS)
     after = apply_suppressions(result, ignore=ignore)
     assert not any(f.rule_id == "MCP006" for f in after.findings)

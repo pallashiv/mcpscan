@@ -102,13 +102,13 @@ To accept a specific finding with a recorded reason, use an ignore file:
 
 | ID | Severity | What it detects |
 | --- | --- | --- |
-| MCP001 | CRITICAL / HIGH | Tool poisoning or prompt injection in name, description or schema text: hidden `<IMPORTANT>` tags, concealment from the user, exfiltration directives (critical); instruction override, forced tool calls (high) |
+| MCP001 | CRITICAL / HIGH / MEDIUM | Tool poisoning or prompt injection in name, description or schema text: hidden `<IMPORTANT>` tags, concealment from the user, exfiltration directives (critical); instruction override (high); forced tool calls such as "you must call X first" (medium: common sequencing in legitimate servers; "call this tool" is ignored) |
 | MCP002 | HIGH | Invisible Unicode (categories Cf, Co, Cn and lone surrogates, excluding ZWJ) in metadata |
-| MCP003 | HIGH | References to sensitive files: `~/.ssh`, `.env`, `.aws/credentials`, `/etc/passwd`, `.npmrc`, ... |
-| MCP004 | HIGH / MEDIUM | Over-permissioned capability: command execution, raw SQL, secret access (high); filesystem write/delete, arbitrary URL fetch, outbound messaging (medium). Wording like "any file" escalates to high; a matching parameter name alone lowers severity one level |
+| MCP003 | HIGH / MEDIUM | References to sensitive files: `~/.ssh`, `.aws/credentials`, `/etc/passwd`, `.npmrc`, ... (high); `.env` and `credentials.json`-style names (medium, since dev tools mention them in ordinary docs) |
+| MCP004 | HIGH / MEDIUM | Over-permissioned capability: command execution (including `start_process`-style tools), raw SQL, secret access (high); filesystem write/delete, arbitrary URL fetch, outbound messaging (medium). Wording like "any file" raises it to high and the evidence says why; a matching parameter name alone lowers it one level; negated text ("never overwrite the file") is ignored |
 | MCP005 | MEDIUM / LOW | Weak input schema: free-form string for an exec-like parameter such as `command`, `sql`, `script` (medium, per tool); for `path`, `url`, `host` and similar (low, once per manifest, since almost every file or HTTP tool has one); missing schema (low); `additionalProperties` not `false` (low, once per manifest) |
-| MCP006 | LOW | State-changing tool has neither `readOnlyHint` nor `destructiveHint` |
-| MCP007 | MEDIUM / LOW | Description references another tool (cross-tool shadowing), or steers the model away from other tools. A "DEPRECATED: use X instead" notice is low |
+| MCP006 | LOW | State-changing tools with neither `readOnlyHint` nor `destructiveHint` (once per manifest) |
+| MCP007 | MEDIUM / LOW | Description steers the model away from other tools, e.g. "use this instead of the analysis tool" (medium, per tool); references to sibling tools, which is usually workflow guidance (low, once per manifest). A description talking about itself ("do not call this tool more than 3 times") is ignored |
 | MCP008 | MEDIUM | Duplicate tool names, including names that differ only by case or `-`/`_` |
 | CFG001 | HIGH | Hardcoded secret in `env`, `headers`, args or a URL (secret-like key names and known token formats) |
 | CFG002 | HIGH | Remote server over plaintext `http://` / `ws://` on a non-local host |
@@ -128,7 +128,7 @@ src/mcpscan/
   suppress.py  Baseline and ignore files
   cli.py       argparse entrypoint
 action.yml     GitHub Action (composite); scripts/run-scan.sh is its scan step
-tests/         pytest; a positive and a negative test per rule; fixtures/real/ holds real server manifests
+tests/         pytest; a positive and a negative test per rule; fixtures/real/ holds manifests from 8 real servers
 examples/      vulnerable_manifest.json, safe_manifest.json, vulnerable_config.json
 ```
 
