@@ -64,7 +64,7 @@ jobs:
 | `upload-sarif` | `false` | Upload the SARIF to code scanning (results appear in the Security tab) |
 | `python-version` | `3.12` | Python used to run mcpscan |
 
-The action prints the text report in the job log, uploads SARIF (if enabled) before failing the job, and sets an `exit-code` output (0, 1 or 2, as for the CLI). The SARIF marks each finding with its line in the scanned file and a stable fingerprint, so code scanning tracks alerts across runs (a finding you fix closes its alert). To scan several files, add one step per file with a different `sarif-file`; give each upload a distinct file so results do not overwrite each other. The action installs mcpscan from the ref you pin, so pin a release tag (as above) or a commit SHA. `@main` tracks unreleased changes.
+The action prints the text report in the job log, uploads SARIF (if enabled) before failing the job, and sets an `exit-code` output (0, 1 or 2, as for the CLI). Code scanning takes an alert's severity from its rule, so the SARIF defines one rule per rule and severity: the highest severity keeps the plain ID (`MCP004`) and lower ones get a suffix (`MCP004.medium`), so each alert shows its true severity. The SARIF also marks each finding with its line in the scanned file and a stable fingerprint, so code scanning tracks alerts across runs (a finding you fix closes its alert). To scan several files, add one step per file with a different `sarif-file`; give each upload a distinct file so results do not overwrite each other. The action installs mcpscan from the ref you pin, so pin a release tag (as above) or a commit SHA. `@main` tracks unreleased changes.
 
 ### Adopting mcpscan on an existing project
 

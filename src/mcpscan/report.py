@@ -159,26 +159,43 @@ def _artifact_uri(path: str) -> str:
     return p.as_uri() if p.is_absolute() else p.as_posix()
 
 
+def _sarif_rule_id(rule_id: str, severity: Severity) -> str:
+    """GitHub takes an alert's severity label from its rule, not from the result. So each
+    (rule, severity) pair is its own SARIF rule: the rule's top severity keeps the plain ID
+    (MCP004) and lower ones get a suffix (MCP004.medium)."""
+    top = max(RULE_INFO[rule_id].severities)
+    return rule_id if severity == top else f"{rule_id}.{severity.label}"
+
+
 def render_sarif(result: ScanResult) -> str:
-    rule_ids = sorted(RULE_INFO)
+    all_findings = list(result.findings) + [s.finding for s in result.suppressed]
+    pairs = {(rid, sev) for rid, info in RULE_INFO.items() for sev in info.severities}
+    pairs |= {(f.rule_id, f.severity) for f in all_findings}
+    ordered = sorted(pairs, key=lambda p: (p[0], -int(p[1])))
+    index = {pair: i for i, pair in enumerate(ordered)}
+
     rules: List[Dict[str, Any]] = []
-    for rid in rule_ids:
+    for rid, sev in ordered:
         info = RULE_INFO[rid]
-        top = max(info.severities)
         rules.append({
-            "id": rid,
+            "id": _sarif_rule_id(rid, sev),
             "name": info.name,
             "shortDescription": {"text": info.name},
             "fullDescription": {"text": info.summary},
             "help": {"text": info.remediation},
-            "defaultConfiguration": {"level": _SARIF_LEVEL[top]},
-            "properties": {"tags": ["security", "mcp"], "security-severity": _SECURITY_SEVERITY[top]},
+            "defaultConfiguration": {"level": _SARIF_LEVEL[sev]},
+            "properties": {
+                "tags": ["security", "mcp"],
+                "security-severity": _SECURITY_SEVERITY[sev],
+                "mcpscanRule": rid,
+                "severity": sev.label,
+            },
         })
     results: List[Dict[str, Any]] = []
     for f in result.findings:
-        results.append(_sarif_result(f, result.path, rule_ids.index(f.rule_id), result.source_text))
+        results.append(_sarif_result(f, result.path, index[(f.rule_id, f.severity)], result.source_text))
     for s in result.suppressed:
-        entry = _sarif_result(s.finding, result.path, rule_ids.index(s.finding.rule_id), result.source_text)
+        entry = _sarif_result(s.finding, result.path, index[(s.finding.rule_id, s.finding.severity)], result.source_text)
         entry["suppressions"] = [{"kind": "external", "justification": s.reason}]
         results.append(entry)
     doc = {
@@ -217,7 +234,7 @@ def _fingerprint(f: Finding) -> str:
 def _sarif_result(f: Finding, path: str, rule_index: int, text: Optional[str] = None) -> Dict[str, Any]:
     where = f.subject + (f" {f.field}" if f.field else "")
     return {
-        "ruleId": f.rule_id,
+        "ruleId": _sarif_rule_id(f.rule_id, f.severity),
         "ruleIndex": rule_index,
         "level": _SARIF_LEVEL[f.severity],
         "message": {"text": f"{f.title} ({where}): {f.evidence}. {f.remediation}"},
@@ -229,7 +246,7 @@ def _sarif_result(f: Finding, path: str, rule_index: int, text: Optional[str] = 
             "logicalLocations": [{"name": f.subject, "fullyQualifiedName": f"{f.subject}/{f.field}" if f.field else f.subject}],
         }],
         "partialFingerprints": {"mcpscan/finding/v1": _fingerprint(f)},
-        "properties": {"severity": f.severity.label},
+        "properties": {"severity": f.severity.label, "mcpscanRule": f.rule_id},
     }
 
 
