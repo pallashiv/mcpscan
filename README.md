@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: pallashiv/mcpscan@main
+      - uses: pallashiv/mcpscan@v0.1.1
         with:
           path: claude_desktop_config.json
           fail-on: high
@@ -64,7 +64,7 @@ jobs:
 | `upload-sarif` | `false` | Upload the SARIF to code scanning (results appear in the Security tab) |
 | `python-version` | `3.12` | Python used to run mcpscan |
 
-The action prints the text report in the job log, uploads SARIF (if enabled) before failing the job, and sets an `exit-code` output (0, 1 or 2, as for the CLI). To scan several files, add one step per file with a different `sarif-file`; give each upload a distinct file so results do not overwrite each other. The action installs mcpscan from the ref you pin, so pin a tag or commit SHA once releases exist.
+The action prints the text report in the job log, uploads SARIF (if enabled) before failing the job, and sets an `exit-code` output (0, 1 or 2, as for the CLI). To scan several files, add one step per file with a different `sarif-file`; give each upload a distinct file so results do not overwrite each other. The action installs mcpscan from the ref you pin, so pin a release tag (as above) or a commit SHA. `@main` tracks unreleased changes.
 
 ### Adopting mcpscan on an existing project
 
