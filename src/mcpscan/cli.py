@@ -9,6 +9,7 @@ from typing import List, Optional
 
 from . import __version__
 from .models import Severity
+from .html_report import render_html
 from .report import RENDERERS, render_text
 from .scanner import ScanError, scan_file
 from .suppress import apply_suppressions, baseline_document, load_baseline, load_ignore
@@ -30,7 +31,7 @@ def build_parser() -> argparse.ArgumentParser:
         epilog="exit codes: 0 = clean or below --fail-on, 1 = findings at/above --fail-on, 2 = usage or parse error",
     )
     scan.add_argument("path", help="path to a manifest or config JSON file")
-    scan.add_argument("--format", choices=["text", "json", "markdown", "sarif"], default="text", help="report format (default: text)")
+    scan.add_argument("--format", choices=["text", "json", "markdown", "sarif", "html"], default="text", help="report format (default: text)")
     scan.add_argument(
         "--fail-on", choices=[s.label for s in Severity], type=str.lower, default="low",
         help="exit 1 if any finding is at or above this severity (default: low, i.e. any finding)",
@@ -65,7 +66,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         color = args.output is None and sys.stdout.isatty() and "NO_COLOR" not in os.environ
         report = render_text(result, color=color)
     else:
-        report = RENDERERS[args.format](result)
+        report = ({**RENDERERS, "html": render_html})[args.format](result)
 
     if args.output:
         try:

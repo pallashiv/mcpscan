@@ -20,6 +20,7 @@ report. It never asks for, receives or uploads anything on its own.
 | **Network** | None. The code imports no networking modules. |
 | **Runs other programs** | Never. No subprocesses, no `eval`/`exec`. It does not start, connect to or execute the servers it scans. |
 | **Dependencies** | None at runtime (Python standard library only), which keeps the code small enough to review. |
+| **HTML report** | `--format html` is one file with inline CSS and JS. Its Content-Security-Policy allows only those inline blocks (by hash) and blocks all network access; findings are rendered as text, never as markup, so a hostile scanned file cannot inject into it. Tests check this, including in a real browser. |
 | **Writes** | Only files you name: `--output` and `--write-baseline`. |
 | **Secrets** | Values that look like secrets are masked in every report format. Text from scanned files is escaped, so a hostile file cannot inject terminal escape sequences. |
 

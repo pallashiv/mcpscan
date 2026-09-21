@@ -17,7 +17,7 @@ pip install -e ".[dev]"   # development
 ## Usage
 
 ```sh
-mcpscan scan <path> [--format text|json|markdown|sarif] [--fail-on low|medium|high|critical] [--output FILE]
+mcpscan scan <path> [--format text|json|markdown|sarif|html] [--fail-on low|medium|high|critical] [--output FILE]
                      [--baseline FILE | --write-baseline FILE] [--ignore-file FILE]
 ```
 
@@ -25,6 +25,7 @@ mcpscan scan <path> [--format text|json|markdown|sarif] [--fail-on low|medium|hi
 mcpscan scan examples/vulnerable_manifest.json
 mcpscan scan claude_desktop_config.json --fail-on high
 mcpscan scan tools.json --format sarif --output mcpscan.sarif
+mcpscan scan tools.json --format html --output report.html   # then open report.html
 ```
 
 | Exit code | Meaning |
@@ -34,6 +35,15 @@ mcpscan scan tools.json --format sarif --output mcpscan.sarif
 | 2 | Usage error, unreadable file, invalid JSON or unrecognised input |
 
 Text output is colored on a terminal; set `NO_COLOR` to disable. Text from scanned files is escaped in every format, so a hostile manifest cannot inject terminal escape sequences, and values that look like secrets are masked in evidence.
+
+### HTML report
+
+`--format html` writes one self-contained file you open in any browser: a dashboard with a severity breakdown, clickable severity tiles, a findings-by-rule chart, search, grouping (by severity, tool or server, or rule), expandable findings with evidence, fix and line number, and one-click copy of a finding or a ready-made ignore rule. It works offline, has light and dark themes, and every view is a shareable link (the filters live in the URL hash).
+
+<p align="center"><img src="docs/report-dark.png" alt="mcpscan HTML report, dark theme" width="880"></p>
+<p align="center"><img src="docs/report-light.png" alt="mcpscan HTML report, light theme, filtered to critical and high, grouped by tool" width="880"></p>
+
+The report cannot send your data anywhere. It carries a Content-Security-Policy that allows only its own inline code (by hash) and blocks every network request, and text from the scanned file is always inserted as text, never as markup, so a hostile manifest cannot inject anything into it. Both properties are tested, including in a real browser. The output is deterministic (no timestamps), so it diffs cleanly and works as a CI artifact.
 
 ### GitHub Action
 
@@ -129,6 +139,7 @@ src/mcpscan/
   rules.py     One pure function per rule; rule metadata (RULE_INFO)
   scanner.py   Detects input type and runs the rules
   report.py    Renderers: text, JSON, Markdown, SARIF 2.1.0
+  html_report.py  Self-contained interactive HTML report
   suppress.py  Baseline and ignore files
   cli.py       argparse entrypoint
 action.yml     GitHub Action (composite); scripts/run-scan.sh is its scan step

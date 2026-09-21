@@ -9,7 +9,7 @@ PYPROJECT = Path(__file__).resolve().parent.parent / "pyproject.toml"
 
 # Every module the package may import. Adding to this list is a security-relevant change.
 ALLOWED_IMPORTS = {
-    "__future__", "argparse", "dataclasses", "enum", "fnmatch", "hashlib", "ipaddress", "json",
+    "__future__", "argparse", "base64", "dataclasses", "enum", "fnmatch", "hashlib", "ipaddress", "json",
     "os", "pathlib", "re", "sys", "typing", "unicodedata", "urllib.parse",
 }
 FORBIDDEN_CALLS = {"eval", "exec", "compile", "__import__"}

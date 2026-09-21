@@ -18,6 +18,7 @@ src/mcpscan/
   rules.py     One function per rule; pure functions, no I/O; RULE_INFO metadata
   scanner.py   Detects input type (tool manifest vs client config) and runs rules
   report.py    Renderers: terminal (color optional), JSON, Markdown, SARIF
+  html_report.py  Self-contained interactive HTML report (--format html): CSP-locked, textContent-only rendering
   suppress.py  Baseline (--baseline/--write-baseline) and ignore-file (--ignore-file) handling
   cli.py       argparse entrypoint: `mcpscan scan <path>`
 action.yml    GitHub Action (composite); scripts/run-scan.sh is its scan step
@@ -58,7 +59,7 @@ Config rules:
 - CFG006 Overly broad filesystem root (/, ~, home dir). HIGH.
 
 ## CLI contract
-mcpscan scan <path> [--format text|json|markdown|sarif] [--fail-on low|medium|high|critical] [--output FILE]
+mcpscan scan <path> [--format text|json|markdown|sarif|html] [--fail-on low|medium|high|critical] [--output FILE]
                      [--baseline FILE | --write-baseline FILE] [--ignore-file FILE]
 Exit codes: 0 = clean (or below threshold), 1 = findings at/above --fail-on (default: low), 2 = usage/parse error.
 Suppressed findings (baseline/ignore) never affect the exit code but are always counted in reports. Ignore entries require a `reason`.
