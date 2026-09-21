@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
+import re
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from . import __version__
 from .models import Finding, ScanResult, Severity
@@ -174,9 +176,9 @@ def render_sarif(result: ScanResult) -> str:
         })
     results: List[Dict[str, Any]] = []
     for f in result.findings:
-        results.append(_sarif_result(f, result.path, rule_ids.index(f.rule_id)))
+        results.append(_sarif_result(f, result.path, rule_ids.index(f.rule_id), result.source_text))
     for s in result.suppressed:
-        entry = _sarif_result(s.finding, result.path, rule_ids.index(s.finding.rule_id))
+        entry = _sarif_result(s.finding, result.path, rule_ids.index(s.finding.rule_id), result.source_text)
         entry["suppressions"] = [{"kind": "external", "justification": s.reason}]
         results.append(entry)
     doc = {
@@ -190,7 +192,29 @@ def render_sarif(result: ScanResult) -> str:
     return json.dumps(doc, indent=2, ensure_ascii=True) + "\n"
 
 
-def _sarif_result(f: Finding, path: str, rule_index: int) -> Dict[str, Any]:
+def locate(text: Optional[str], subject: str) -> int:
+    """Best-effort 1-based line of a subject ("tool:x", "server:x") in the source JSON; 1 if unknown."""
+    kind, _, name = subject.partition(":")
+    if not text or kind not in ("tool", "server") or not name:
+        return 1
+    for needle in (json.dumps(name, ensure_ascii=False), json.dumps(name)):
+        if kind == "tool":
+            pattern = re.compile(r'"name"\s*:\s*' + re.escape(needle))
+        else:
+            pattern = re.compile(re.escape(needle) + r"\s*:")
+        m = pattern.search(text)
+        if m:
+            return text.count("\n", 0, m.start()) + 1
+    return 1
+
+
+def _fingerprint(f: Finding) -> str:
+    """Stable identity for code scanning. Excludes evidence so rewording does not reopen alerts."""
+    key = "\0".join((f.rule_id, f.subject, f.field, f.title))
+    return hashlib.sha256(key.encode("utf-8")).hexdigest()[:32]
+
+
+def _sarif_result(f: Finding, path: str, rule_index: int, text: Optional[str] = None) -> Dict[str, Any]:
     where = f.subject + (f" {f.field}" if f.field else "")
     return {
         "ruleId": f.rule_id,
@@ -198,9 +222,13 @@ def _sarif_result(f: Finding, path: str, rule_index: int) -> Dict[str, Any]:
         "level": _SARIF_LEVEL[f.severity],
         "message": {"text": f"{f.title} ({where}): {f.evidence}. {f.remediation}"},
         "locations": [{
-            "physicalLocation": {"artifactLocation": {"uri": _artifact_uri(path)}},
+            "physicalLocation": {
+                "artifactLocation": {"uri": _artifact_uri(path)},
+                "region": {"startLine": locate(text, f.subject)},
+            },
             "logicalLocations": [{"name": f.subject, "fullyQualifiedName": f"{f.subject}/{f.field}" if f.field else f.subject}],
         }],
+        "partialFingerprints": {"mcpscan/finding/v1": _fingerprint(f)},
         "properties": {"severity": f.severity.label},
     }
 

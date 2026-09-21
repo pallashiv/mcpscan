@@ -1,0 +1,28 @@
+name: Code scanning demo
+
+# Manual only: runs the mcpscan Action on one file and uploads the SARIF to code scanning,
+# so results appear in the repository's Security tab. Nothing happens until you click
+# "Run workflow". Re-run with a clean file (examples/safe_manifest.json) to close the alerts.
+on:
+  workflow_dispatch:
+    inputs:
+      path:
+        description: File to scan, relative to the repository root
+        default: examples/vulnerable_manifest.json
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./
+        # The findings are the point of the demo, so do not fail the run because of them.
+        continue-on-error: true
+        with:
+          path: ${{ inputs.path }}
+          upload-sarif: true

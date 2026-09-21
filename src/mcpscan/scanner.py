@@ -49,7 +49,7 @@ def _find_tools(data: Any) -> Optional[List[Dict[str, Any]]]:
     return None
 
 
-def scan_data(data: Any, source: str = "<data>") -> ScanResult:
+def scan_data(data: Any, source: str = "<data>", source_text: Optional[str] = None) -> ScanResult:
     servers = _find_servers(data) if isinstance(data, dict) else None
     tools = _find_tools(data)
     if servers is None and tools is None:
@@ -79,7 +79,7 @@ def scan_data(data: Any, source: str = "<data>") -> ScanResult:
             findings.extend(rule(servers))
 
     unique = sorted(set(findings), key=Finding.sort_key)
-    return ScanResult(source, "+".join(kinds), unique, tool_count, server_count)
+    return ScanResult(source, "+".join(kinds), unique, tool_count, server_count, source_text=source_text)
 
 
 def scan_file(path: str) -> ScanResult:
@@ -94,4 +94,4 @@ def scan_file(path: str) -> ScanResult:
         data = json.loads(text)
     except (json.JSONDecodeError, RecursionError) as exc:
         raise ScanError(f"{path} is not valid JSON: {exc}") from None
-    return scan_data(data, path)
+    return scan_data(data, path, text)

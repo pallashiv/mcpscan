@@ -5,7 +5,7 @@ from __future__ import annotations
 import unicodedata
 from dataclasses import dataclass, field as dc_field
 from enum import IntEnum
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 
 class Severity(IntEnum):
@@ -106,6 +106,8 @@ class ScanResult:
     server_count: int = 0
     suppressed: List[Suppressed] = dc_field(default_factory=list)
     stale_baseline: int = 0  # baseline entries that no longer match any finding
+    # Raw file text, kept so SARIF can point at real line numbers. Not part of equality or repr.
+    source_text: Optional[str] = dc_field(default=None, repr=False, compare=False)
 
     def counts(self) -> Dict[str, int]:
         counts = {s.label: 0 for s in sorted(Severity, reverse=True)}
