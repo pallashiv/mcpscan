@@ -37,7 +37,7 @@ Text output is colored on a terminal; set `NO_COLOR` to disable. Text from scann
 ### Supported inputs
 
 1. **Tool manifest**: the JSON from an MCP `tools/list` response, as `{"tools": [...]}`, a bare list, or a raw JSON-RPC response with `result.tools`.
-2. **Client config**: `claude_desktop_config.json` / `mcp.json` style `{"mcpServers": {...}}` (also `{"servers": {...}}` as used by VS Code, including under `"mcp"`).
+2. **Client config**: `claude_desktop_config.json` / `mcp.json` style `{"mcpServers": {...}}` (also `{"servers": {...}}` as used by VS Code, including under `"mcp"`). A config with no servers (for example a Claude Desktop config that only has `preferences`) scans clean with a note, exit 0. Files that are neither a manifest nor a config exit 2.
 
 ## Rules
 

@@ -23,6 +23,8 @@ _INPUT_LABELS = {"manifest": "tool manifest", "config": "client config", "manife
 
 def _summary_line(result: ScanResult) -> str:
     if not result.findings:
+        if result.input_type == "config" and result.server_count == 0:
+            return "No MCP servers configured; nothing to scan."
         return "No findings."
     parts = [f"{n} {label}" for label, n in result.counts().items() if n]
     total = len(result.findings)

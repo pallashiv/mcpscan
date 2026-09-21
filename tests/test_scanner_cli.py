@@ -50,6 +50,20 @@ def test_manifest_and_config_in_one_file():
     assert result.input_type == "manifest+config" and result.findings
 
 
+def test_client_config_without_servers_is_clean_not_an_error(capsys):
+    for data in ({"mcpServers": {}}, {"preferences": {"theme": "dark"}}, {"projects": {"/a": {}}}):
+        result = scan_data(data)
+        assert (result.input_type, result.server_count, result.findings) == ("config", 0, [])
+        assert "nothing to scan" in render_text(result)
+
+
+def test_cli_exits_0_on_config_with_no_servers(tmp_path, capsys):
+    cfg = tmp_path / "claude_desktop_config.json"
+    cfg.write_text(json.dumps({"preferences": {"quickEntryShortcut": "off"}}), encoding="utf-8")
+    assert main(["scan", str(cfg)]) == 0
+    assert "No MCP servers configured" in capsys.readouterr().out
+
+
 @pytest.mark.parametrize("data", [{}, {"foo": 1}, "text", 5, None, {"tools": "no"}, {"mcpServers": []}, [1, 2], {"mcpServers": {"a": 1}}])
 def test_unrecognised_or_malformed_input_raises(data):
     with pytest.raises(ScanError):

@@ -14,6 +14,11 @@ class ScanError(Exception):
     """The input could not be read or is not a recognised MCP file."""
 
 
+# Top-level keys of real client configs (Claude Desktop, ~/.claude.json). A file that has
+# one of these but no server list is a config with nothing configured, not an unknown file.
+_CLIENT_CONFIG_KEYS = frozenset({"preferences", "coworkUserFilesPath", "globalShortcut", "projects"})
+
+
 def _find_servers(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     for candidate in (data.get("mcpServers"), data.get("servers")):
         if candidate is not None:
@@ -23,6 +28,8 @@ def _find_servers(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     nested = data.get("mcp")  # VS Code settings.json
     if isinstance(nested, dict) and isinstance(nested.get("servers"), dict):
         return nested["servers"]
+    if _CLIENT_CONFIG_KEYS & data.keys():
+        return {}
     return None
 
 
