@@ -68,7 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: pallashiv/mcpscan@v0.1.2
+      - uses: pallashiv/mcpscan@v0.1.3
         with:
           path: claude_desktop_config.json
           fail-on: high
