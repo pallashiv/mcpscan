@@ -17,7 +17,7 @@ pip install -e ".[dev]"   # development
 ## Usage
 
 ```sh
-mcpscan scan <path> [--format text|json|markdown|sarif|html] [--fail-on low|medium|high|critical] [--output FILE]
+mcpscan scan <path> [--format text|json|markdown|sarif|html] [--lock FILE | --write-lock FILE] [--fail-on low|medium|high|critical] [--output FILE]
                      [--baseline FILE | --write-baseline FILE] [--ignore-file FILE]
 ```
 
@@ -44,6 +44,17 @@ Text output is colored on a terminal; set `NO_COLOR` to disable. Text from scann
 <p align="center"><img src="docs/report-light.png" alt="mcpscan HTML report, light theme, filtered to critical and high, grouped by tool" width="880"></p>
 
 The report cannot send your data anywhere. It carries a Content-Security-Policy that allows only its own inline code (by hash) and blocks every network request, and text from the scanned file is always inserted as text, never as markup, so a hostile manifest cannot inject anything into it. Both properties are tested, including in a real browser. The output is deterministic (no timestamps), so it diffs cleanly and works as a CI artifact.
+
+### Rug-pull detection
+
+A server that looks safe when you review it can change a tool's description or schema afterwards - tool poisoning delivered after approval instead of at install time. v0.1 only scans one file at a time (see "Not yet built" below), so it can't watch a server continuously, but a lock file recorded at approval time lets every later scan catch drift:
+
+```sh
+mcpscan scan tools.json --write-lock mcpscan.lock    # after reviewing the tools, commit this file
+mcpscan scan tools.json --lock mcpscan.lock            # later: fails if any tool is new, changed or missing
+```
+
+A changed tool is `LOCK001` (high): the evidence is its current description, so you can tell at a glance whether the change is legitimate or not. Findings are keyed by tool name, so a rename shows up as a new tool (`LOCK002`) alongside the old one disappearing (`LOCK003`) - the pair is worth a second look, since a rug-pull can rename a tool to dodge a lock match. Lock findings are ordinary findings: they show up in every format, and can be accepted with an ignore-file entry (`{"rule": "LOCK001", "subject": "tool:the_tool", "reason": "..."}`) the same as any other rule.
 
 ### GitHub Action
 
@@ -126,6 +137,9 @@ To accept a specific finding with a recorded reason, use an ignore file:
 | CFG004 | MEDIUM | Unpinned `npx` / `uvx` / `pipx` (also `pnpm dlx`, `bunx`) package |
 | CFG005 | HIGH / MEDIUM | Launched through a shell or `curl \| sh` (high); a plain shell wrapper such as `cmd /c npx ...` is medium |
 | CFG006 | HIGH | Filesystem root of `/`, `~`, `$HOME`, a whole home directory or a drive root |
+| LOCK001 | HIGH | A tool's description, input schema or annotations no longer match `--lock`'s lock file (rug-pull detection) |
+| LOCK002 | MEDIUM | A tool is present that the lock file doesn't know about: added, or renamed from one that was |
+| LOCK003 | LOW | A tool in the lock file is no longer offered |
 
 ## Security and privacy
 

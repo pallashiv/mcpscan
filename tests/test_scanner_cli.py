@@ -21,8 +21,9 @@ VULN_CONFIG = str(EXAMPLES / "vulnerable_config.json")
 # Examples ---------------------------------------------------------------------
 
 def test_vulnerable_examples_trigger_every_rule():
+    # LOCK001-3 only fire with --lock (see tests/test_lock.py), so they're excluded here.
     fired = {f.rule_id for p in (VULN_MANIFEST, VULN_CONFIG) for f in scan_file(p).findings}
-    assert fired == set(RULE_INFO)
+    assert fired == {r for r in RULE_INFO if not r.startswith("LOCK")}
 
 
 def test_safe_manifest_is_clean():

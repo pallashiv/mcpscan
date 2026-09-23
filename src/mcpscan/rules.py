@@ -113,6 +113,28 @@ RULE_INFO: Dict[str, RuleInfo] = {
             "Server granted access to /, ~ or a whole home directory.",
             "Grant only the specific project directories the server needs.",
         ),
+        # Lock rules (rug-pull detection): produced only when --lock is given, by lock.py, not by
+        # a function in MANIFEST_RULES. Listed here so they get the same severity/report handling.
+        RuleInfo(
+            "LOCK001", "Tool changed since lock", (H,),
+            "A tool's description, input schema or annotations no longer match the lock file "
+            "recorded at approval time. This is the core rug-pull signal: a server that looked "
+            "safe when reviewed can change a tool's declaration afterwards.",
+            "Review the new declaration before trusting it. If the change is expected, "
+            "re-approve it with --write-lock.",
+        ),
+        RuleInfo(
+            "LOCK002", "New tool since lock", (M,),
+            "A tool is present that was not recorded in the lock file: added, or renamed from "
+            "one that was.",
+            "Review the new tool, then include it by regenerating the lock file with --write-lock.",
+        ),
+        RuleInfo(
+            "LOCK003", "Tool removed since lock", (L,),
+            "A tool recorded in the lock file is no longer offered by the server.",
+            "If expected, regenerate the lock file with --write-lock. A tool removed alongside a "
+            "similarly-capable new one is worth a closer look.",
+        ),
     )
 }
 

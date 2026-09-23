@@ -108,6 +108,8 @@ class ScanResult:
     stale_baseline: int = 0  # baseline entries that no longer match any finding
     # Raw file text, kept so SARIF can point at real line numbers. Not part of equality or repr.
     source_text: Optional[str] = dc_field(default=None, repr=False, compare=False)
+    # Raw tool dicts, kept so --lock can fingerprint them. None when the input has no manifest.
+    tools_raw: Optional[List[Dict[str, Any]]] = dc_field(default=None, repr=False, compare=False)
 
     def counts(self) -> Dict[str, int]:
         counts = {s.label: 0 for s in sorted(Severity, reverse=True)}

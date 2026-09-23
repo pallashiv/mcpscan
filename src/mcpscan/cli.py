@@ -5,11 +5,13 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from dataclasses import replace
 from typing import List, Optional
 
 from . import __version__
-from .models import Severity
+from .models import Finding, Severity
 from .html_report import render_html
+from .lock import check_lock, load_lock, lock_document
 from .report import RENDERERS, render_text
 from .scanner import ScanError, scan_file
 from .suppress import apply_suppressions, baseline_document, load_baseline, load_ignore
@@ -41,6 +43,9 @@ def build_parser() -> argparse.ArgumentParser:
     baseline = scan.add_mutually_exclusive_group()
     baseline.add_argument("--baseline", metavar="FILE", help="hide findings already listed in FILE; only new findings count")
     baseline.add_argument("--write-baseline", metavar="FILE", help="save the current findings to FILE and exit 0")
+    lock = scan.add_mutually_exclusive_group()
+    lock.add_argument("--lock", metavar="FILE", help="flag tools that are new, removed, or changed since FILE was written (rug-pull detection)")
+    lock.add_argument("--write-lock", metavar="FILE", help="save a fingerprint of the current tools to FILE and exit 0")
     return parser
 
 
@@ -54,12 +59,27 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     try:
         result = scan_file(args.path)
+        if args.lock or args.write_lock:
+            if result.tools_raw is None:
+                raise ScanError("--lock and --write-lock need a tool manifest input (this file has no 'tools')")
+        if args.write_lock:
+            with open(args.write_lock, "w", encoding="utf-8") as fh:
+                fh.write(lock_document(result.tools_raw))
+            print(f"mcpscan: wrote lock of {len(result.tools_raw)} tool(s) to {args.write_lock}", file=sys.stderr)
+            return EXIT_OK
+        if args.lock:
+            lock_findings = check_lock(result.tools_raw, load_lock(args.lock))
+            merged = sorted(set(result.findings) | set(lock_findings), key=Finding.sort_key)
+            result = replace(result, findings=merged)
         ignore = load_ignore(args.ignore_file) if args.ignore_file else None
         baseline = load_baseline(args.baseline) if args.baseline else None
         if ignore or baseline is not None:
             result = apply_suppressions(result, ignore, baseline)
     except ScanError as exc:
         print(f"mcpscan: error: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+    except OSError as exc:
+        print(f"mcpscan: error: cannot write {args.write_lock}: {exc}", file=sys.stderr)
         return EXIT_ERROR
 
     if args.format == "text":

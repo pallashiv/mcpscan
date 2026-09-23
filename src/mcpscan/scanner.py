@@ -79,7 +79,8 @@ def scan_data(data: Any, source: str = "<data>", source_text: Optional[str] = No
             findings.extend(rule(servers))
 
     unique = sorted(set(findings), key=Finding.sort_key)
-    return ScanResult(source, "+".join(kinds), unique, tool_count, server_count, source_text=source_text)
+    return ScanResult(source, "+".join(kinds), unique, tool_count, server_count,
+                       source_text=source_text, tools_raw=tools)
 
 
 def scan_file(path: str) -> ScanResult:

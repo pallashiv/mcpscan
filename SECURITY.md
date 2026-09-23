@@ -27,6 +27,13 @@ report. It never asks for, receives or uploads anything on its own.
 These properties are enforced by a test (`tests/test_no_network.py`) that fails if the code starts
 importing networking or process modules, calling `eval`/`exec`, or gaining a runtime dependency.
 
+## Rug-pull detection
+
+`--lock`/`--write-lock` only compares a manifest against a lock file you already have; it does
+not fetch, store or transmit anything, and the lock file itself holds only hashes, never the
+original tool text. It does not run continuously — it only catches drift between two scans you
+run yourself.
+
 ## Limits
 
 - Detection is heuristic. The injection rules match known phrasing, so a determined attacker can

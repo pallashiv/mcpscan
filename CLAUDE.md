@@ -59,7 +59,7 @@ Config rules:
 - CFG006 Overly broad filesystem root (/, ~, home dir). HIGH.
 
 ## CLI contract
-mcpscan scan <path> [--format text|json|markdown|sarif|html] [--fail-on low|medium|high|critical] [--output FILE]
+mcpscan scan <path> [--format text|json|markdown|sarif|html] [--lock FILE | --write-lock FILE] [--fail-on low|medium|high|critical] [--output FILE]
                      [--baseline FILE | --write-baseline FILE] [--ignore-file FILE]
 Exit codes: 0 = clean (or below threshold), 1 = findings at/above --fail-on (default: low), 2 = usage/parse error.
 Suppressed findings (baseline/ignore) never affect the exit code but are always counted in reports. Ignore entries require a `reason`.
@@ -74,6 +74,14 @@ Suppressed findings (baseline/ignore) never affect the exit code but are always 
 - README rule table updated (and the rule added to RULE_INFO).
 - No new dependencies without discussion.
 - Must still parse on Python 3.9 (no `match`, no `X | Y` at runtime, no `slots=True`).
+
+## Rug-pull detection (--lock / --write-lock, lock.py)
+Fingerprints each tool's (description, inputSchema, annotations) as a hash; --write-lock saves
+{tool_name: hash} to a JSON lock file, --lock compares the current manifest against it and
+produces ordinary Findings: LOCK001 changed (HIGH), LOCK002 new (MEDIUM), LOCK003 removed (LOW).
+These flow through the normal severity/ignore/baseline/report pipeline like any other rule.
+Manifest inputs only (config drift is not yet covered); --lock/--write-lock on a config-only
+input is a usage error (exit 2), not a silent no-op.
 
 ## Roadmap (do not build until asked)
 Live stdio/HTTP introspection, rug-pull detection (hash tool metadata across runs),
