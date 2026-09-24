@@ -193,3 +193,40 @@ def test_csp_really_blocks_an_injected_script(tmp_path):
     # The blocked <script> stays in the DOM as inert text; what matters is that it did not run.
     assert "<title>BYPASSED" not in proc.stdout
     assert "<title>Mcpscan report" in proc.stdout
+
+
+# Page nav (only used by the demo site, to link sibling reports) ----------------
+
+def test_no_nav_by_default():
+    doc = html_of()
+    assert '<nav class="pagenav"' not in doc
+
+
+def test_nav_links_siblings_and_marks_the_current_page():
+    nav = {
+        "home": "../index.html",
+        "items": [
+            {"label": "Tool poisoning", "href": "vulnerable-manifest.html", "current": True},
+            {"label": "Clean scan", "href": "safe-manifest.html", "current": False},
+        ],
+    }
+    doc = render_html(scan_file(VULN), nav=nav)
+    assert '<nav class="pagenav"' in doc
+    assert 'href="../index.html"' in doc
+    assert '<a href="vulnerable-manifest.html" class="current">Tool poisoning</a>' in doc
+    assert '<a href="safe-manifest.html">Clean scan</a>' in doc
+
+
+def test_nav_labels_are_escaped():
+    nav = {"home": "../index.html", "items": [{"label": "<script>x</script>", "href": "a.html", "current": False}]}
+    doc = render_html(scan_file(VULN), nav=nav)
+    assert "<script>x</script>" not in doc
+    assert "&lt;script&gt;x&lt;/script&gt;" in doc
+
+
+def test_nav_does_not_change_csp_hashes():
+    # The nav is body HTML, not inline CSS/JS, so it must not affect the CSP the page ships with
+    # (adding a query param to script-src/style-src would be a real, if harmless, behavior change).
+    plain_csp = re.search(r'content="([^"]+)"', html_of()).group(1)
+    nav_csp = re.search(r'content="([^"]+)"', render_html(scan_file(VULN), nav={"home": "x", "items": []})).group(1)
+    assert plain_csp == nav_csp

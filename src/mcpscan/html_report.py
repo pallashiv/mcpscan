@@ -13,7 +13,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from . import __version__
 from .models import Finding, ScanResult
@@ -80,6 +80,15 @@ svg.ic { width: 1em; height: 1em; flex: none; display: inline-block; vertical-al
 .local svg { color: var(--ok); }
 .iconbtn { width: 30px; height: 30px; border-radius: 6px; display: grid; place-items: center; border: 1px solid var(--border); background: var(--surface); color: var(--ink2); }
 .iconbtn:hover { color: var(--ink); background: var(--raised); }
+
+/* ---- page nav (only present when this report is one of a linked set, e.g. the demo site) ---- */
+.pagenav { background: var(--raised); border-bottom: 1px solid var(--border); }
+.pagenav-in { max-width: 1080px; margin: 0 auto; padding: 8px 20px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; font-size: 12.5px; }
+.pagenav a { color: var(--ink2); text-decoration: none; padding: 4px 9px; border-radius: 5px; }
+.pagenav a:hover { background: var(--surface); color: var(--ink); }
+.pagenav a.home { color: var(--ink2); font-weight: 600; padding-left: 0; }
+.pagenav a.current { background: var(--surface); color: var(--ink); border: 1px solid var(--border); font-weight: 600; }
+.pagenav .sep { color: var(--muted); }
 
 /* ---- summary ---- */
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
@@ -618,9 +627,29 @@ def _noscript_table(findings: List[Finding]) -> str:
             "<tbody>" + rows + "</tbody></table>")
 
 
-def render_html(result: ScanResult) -> str:
+def _render_nav(nav: Dict[str, Any]) -> str:
+    """A slim strip linking to sibling reports, e.g. the demo site's five examples.
+
+    Not used for an ordinary ``mcpscan scan --format html`` report, which is a single
+    standalone file with nothing to link to; only passed by callers (like the demo site
+    generator) that know the report is part of a linked set.
+    """
+    links = "".join(
+        '<a href="{}"{}>{}</a>'.format(_esc(item["href"]), ' class="current"' if item.get("current") else "", _esc(item["label"]))
+        for item in nav["items"]
+    )
+    return (
+        '<nav class="pagenav"><div class="pagenav-in">'
+        '<a class="home" href="' + _esc(nav["home"]) + '">&larr; All examples</a>'
+        '<span class="sep">/</span>' + links +
+        "</div></nav>\n"
+    )
+
+
+def render_html(result: ScanResult, nav: Optional[Dict[str, Any]] = None) -> str:
     csp = ("default-src 'none'; style-src " + _hash(_CSS) + "; script-src " + _hash(_JS) +
            "; img-src data:; base-uri 'none'; form-action 'none'")
+    body = _BODY.replace('<main class="wrap">', _render_nav(nav) + '<main class="wrap">', 1) if nav else _BODY
     return (
         "<!doctype html>\n"
         '<html lang="en">\n<head>\n<meta charset="utf-8">\n'
@@ -629,7 +658,7 @@ def render_html(result: ScanResult) -> str:
         '<meta name="color-scheme" content="light dark">\n'
         "<title>Mcpscan report</title>\n"
         "<style>" + _CSS + "</style>\n</head>\n<body>\n"
-        + _SPRITE + _BODY +
+        + _SPRITE + body +
         '<noscript><div class="wrap nojs"><h2>Mcpscan report</h2><p>This report needs JavaScript for its interactive view. '
         "The findings are listed here.</p>" + _noscript_table(result.findings) + "</div></noscript>\n"
         '<script type="application/json" id="data">' + _json_for_script(_payload(result)) + "</script>\n"

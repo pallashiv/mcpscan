@@ -44,3 +44,14 @@ def test_vulnerable_and_safe_scenarios_differ_as_expected():
     safe = json.loads(re.search(r'<script type="application/json" id="data">(.*?)</script>',
                        (OUT / "safe-manifest.html").read_text(encoding="utf-8"), re.S).group(1))
     assert vuln["findings"] and not safe["findings"]
+
+
+def test_every_example_links_to_every_other_example_and_marks_itself_current():
+    subprocess.run([sys.executable, str(SCRIPT)], check=True, capture_output=True, text=True, cwd=ROOT)
+    for name in EXPECTED:
+        html = (OUT / f"{name}.html").read_text(encoding="utf-8")
+        assert 'href="../index.html"' in html  # a way back to the landing page
+        for other in EXPECTED:
+            assert f'href="{other}.html"' in html, (name, other)
+        assert html.count('class="current"') == 1
+        assert f'href="{name}.html" class="current"' in html

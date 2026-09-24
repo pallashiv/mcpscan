@@ -30,9 +30,25 @@ EXAMPLES = ROOT / "examples"
 REAL = ROOT / "tests" / "fixtures" / "real"
 OUT = ROOT / "site" / "examples"
 
+# Order matches the card grid on the landing page, so the nav strip reads the same way.
+NAV_ORDER = [
+    ("vulnerable-manifest", "Tool poisoning"),
+    ("safe-manifest", "Clean scan"),
+    ("rug-pull", "Rug-pull"),
+    ("real-server", "Real-world server"),
+    ("vulnerable-config", "Client config"),
+]
+
 
 def _load(path: Path) -> Dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def nav_for(current: str) -> Dict[str, Any]:
+    return {
+        "home": "../index.html",
+        "items": [{"label": label, "href": f"{slug}.html", "current": slug == current} for slug, label in NAV_ORDER],
+    }
 
 
 def build(name: str, data: Any, label: str, **kw) -> None:
@@ -40,7 +56,7 @@ def build(name: str, data: Any, label: str, **kw) -> None:
     if "ignore" in kw:
         result = apply_suppressions(result, ignore=kw["ignore"])
     OUT.mkdir(parents=True, exist_ok=True)
-    (OUT / f"{name}.html").write_text(render_html(result), encoding="utf-8")
+    (OUT / f"{name}.html").write_text(render_html(result, nav=nav_for(name)), encoding="utf-8")
     print(f"  {name}.html  ({len(result.findings)} findings, {len(result.suppressed)} suppressed)")
 
 
@@ -66,7 +82,7 @@ def build_rugpull() -> None:
     merged = sorted(set(result.findings) | set(lock_findings), key=Finding.sort_key)
     result = replace(result, findings=merged)
     OUT.mkdir(parents=True, exist_ok=True)
-    (OUT / "rug-pull.html").write_text(render_html(result), encoding="utf-8")
+    (OUT / "rug-pull.html").write_text(render_html(result, nav=nav_for("rug-pull")), encoding="utf-8")
     print(f"  rug-pull.html  ({len(result.findings)} findings)")
 
 
