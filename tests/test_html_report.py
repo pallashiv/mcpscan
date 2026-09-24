@@ -158,7 +158,7 @@ def _dom(tmp_path, fragment, path=VULN):
 
 def _summary(dom):
     body = dom.split("<body>", 1)[1]
-    fig = re.sub(r"<[^>]+>", " ", re.search(r'id="fig"[^>]*>(.*?)</div>', body, re.S).group(1)).split()
+    fig = re.sub(r"<[^>]+>", " ", re.search(r'id="fig"[^>]*>(.*?)</span>', body, re.S).group(1)).split()
     groups = re.findall(r'class="group-h">.*?<span>([^<]+)</span>', body, re.S)
     return " ".join(fig), len(re.findall(r'<article class="finding', body)), groups
 
@@ -192,4 +192,4 @@ def test_csp_really_blocks_an_injected_script(tmp_path):
         pytest.skip("headless Chrome could not render the page in this environment")
     # The blocked <script> stays in the DOM as inert text; what matters is that it did not run.
     assert "<title>BYPASSED" not in proc.stdout
-    assert "<title>mcpscan report" in proc.stdout
+    assert "<title>Mcpscan report" in proc.stdout

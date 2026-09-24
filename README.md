@@ -7,7 +7,7 @@
 
 A static security scanner for [MCP](https://modelcontextprotocol.io) (Model Context Protocol) servers: a linter for tool manifests and client configs that runs locally and in CI.
 
-**[Live demo →](https://pallashiv.github.io/mcpscan/)** — five real reports, including a hidden-instruction attack, a "rug-pull" caught after approval, and a scan of a real, published MCP server. No install; runs entirely in your browser.
+**[Live demo](https://pallashiv.github.io/mcpscan/):** five real reports, including a hidden-instruction attack, a "rug-pull" caught after approval, and a scan of a real, published MCP server. No install, runs entirely in your browser.
 
 - **Static only.** mcpscan reads a JSON file. It never starts, connects to, or executes the servers it scans.
 - **Zero runtime dependencies.** Standard library only, Python 3.9+.
@@ -17,9 +17,9 @@ A static security scanner for [MCP](https://modelcontextprotocol.io) (Model Cont
 
 ## Why this exists
 
-An MCP server tells an AI assistant what tools it has — in plain text the model trusts by default. That text is an attack surface: a tool's own description can carry hidden instructions ("tool poisoning"), and a server that looked clean when it was reviewed can rewrite a tool afterward ("rug-pull"). Both are documented, real attack patterns against MCP, and neither shows up in a normal code review, because there usually isn't any code to review — the server is a black box that returns JSON.
+An MCP server tells an AI assistant what tools it has, in plain text the model trusts by default. That text is an attack surface: a tool's own description can carry hidden instructions ("tool poisoning"), and a server that looked clean when it was reviewed can rewrite a tool afterward ("rug-pull"). Both are documented, real attack patterns against MCP, and neither shows up in a normal code review, because there usually isn't any code to review: the server is a black box that returns JSON.
 
-mcpscan treats that JSON the way a linter treats source: read it, flag what's wrong, explain why, never run it. It started as 8 rules against two made-up examples; the rules here were tuned against 8 real, published MCP servers (Anthropic's reference servers, a browser-automation server, a filesystem/process server, and others), which cut a first pass of noisy findings from 49 down to a handful of genuine ones. The [HTML report](#html-report) and [rug-pull detection](#rug-pull-detection) below were both built to answer a specific question a security-minded reader asked partway through: *why would anyone trust a tool that asks for their server's data?* The answer is structural — it never asks.
+mcpscan treats that JSON the way a linter treats source: read it, flag what's wrong, explain why, never run it. It started as 8 rules against two made-up examples; the rules here were tuned against 8 real, published MCP servers (Anthropic's reference servers, a browser-automation server, a filesystem/process server, and others), which cut a first pass of noisy findings from 49 down to a handful of genuine ones. The [HTML report](#html-report) and [rug-pull detection](#rug-pull-detection) below were both built to answer a specific question a security-minded reader asked partway through: *why would anyone trust a tool that asks for their server's data?* The answer is structural: it never asks.
 
 ## Install
 
@@ -51,7 +51,7 @@ Text output is colored on a terminal; set `NO_COLOR` to disable. Text from scann
 
 ### HTML report
 
-`--format html` writes one self-contained file you open in any browser: a dashboard with a severity breakdown, clickable severity tiles, a findings-by-rule chart, search, grouping (by severity, tool or server, or rule), expandable findings with evidence, fix and line number, and one-click copy of a finding or a ready-made ignore rule. It works offline, has light and dark themes, and every view is a shareable link (the filters live in the URL hash).
+`--format html` writes one self-contained file you open in any browser: a plain summary line, clickable severity badges, a findings-by-rule breakdown, search, grouping (by severity, tool or server, or rule), expandable findings with evidence, fix and line number, and one-click copy of a finding or a ready-made ignore rule. It works offline, has light and dark themes, and every view is a shareable link (the filters live in the URL hash).
 
 <p align="center"><img src="docs/report-dark.png" alt="mcpscan HTML report, dark theme" width="880"></p>
 <p align="center"><img src="docs/report-light.png" alt="mcpscan HTML report, light theme, filtered to critical and high, grouped by tool" width="880"></p>
@@ -186,7 +186,7 @@ pytest -q
 
 A new rule needs a positive and a negative test, a row in the table above, and an entry in `RULE_INFO`.
 
-Changing a rule's output? `python scripts/build_demo_site.py` regenerates the live demo's reports from the current code — the same script `.github/workflows/pages.yml` runs on every push to `main`.
+Changing a rule's output? `python scripts/build_demo_site.py` regenerates the live demo's reports from the current code. The same script `.github/workflows/pages.yml` runs on every push to `main`.
 
 ## Not yet built
 

@@ -31,7 +31,7 @@ importing networking or process modules, calling `eval`/`exec`, or gaining a run
 
 `--lock`/`--write-lock` only compares a manifest against a lock file you already have; it does
 not fetch, store or transmit anything, and the lock file itself holds only hashes, never the
-original tool text. It does not run continuously — it only catches drift between two scans you
+original tool text. It does not run continuously. It only catches drift between two scans you
 run yourself.
 
 ## Limits

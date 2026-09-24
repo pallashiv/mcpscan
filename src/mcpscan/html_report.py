@@ -27,186 +27,157 @@ _CSS = r"""
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --page: #f9f9f7; --surface: #fcfcfb; --raised: #f3f2ee;
   --ink: #0b0b0b; --ink2: #52514e; --muted: #898781;
-  --grid: #e1e0d9; --base: #c3c2b7; --border: rgba(11,11,11,.10);
+  --grid: #e1e0d9; --base: #c3c2b7; --border: rgba(11,11,11,.12);
   --accent: #2a78d6; --ok: #006300;
   --critical: #d03b3b; --high: #ec835a; --medium: #fab219; --low: #2a78d6;
-  --shadow: 0 1px 2px rgba(11,11,11,.06), 0 8px 24px -12px rgba(11,11,11,.12);
+  --shadow: 0 2px 6px -2px rgba(11,11,11,.14);
 }
 @media (prefers-color-scheme: dark) {
   :root:where(:not([data-theme="light"])) {
     color-scheme: dark;
     --page: #0d0d0d; --surface: #1a1a19; --raised: #222221;
     --ink: #ffffff; --ink2: #c3c2b7; --muted: #898781;
-    --grid: #2c2c2a; --base: #383835; --border: rgba(255,255,255,.10);
+    --grid: #2c2c2a; --base: #383835; --border: rgba(255,255,255,.13);
     --accent: #3987e5; --ok: #0ca30c; --low: #3987e5;
-    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 12px 32px -14px rgba(0,0,0,.7);
+    --shadow: 0 2px 6px -2px rgba(0,0,0,.5);
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
   --page: #0d0d0d; --surface: #1a1a19; --raised: #222221;
   --ink: #ffffff; --ink2: #c3c2b7; --muted: #898781;
-  --grid: #2c2c2a; --base: #383835; --border: rgba(255,255,255,.10);
+  --grid: #2c2c2a; --base: #383835; --border: rgba(255,255,255,.13);
   --accent: #3987e5; --ok: #0ca30c; --low: #3987e5;
-  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 12px 32px -14px rgba(0,0,0,.7);
+  --shadow: 0 2px 6px -2px rgba(0,0,0,.5);
 }
 
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0; background: var(--page); color: var(--ink);
-  font: 15px/1.5 var(--sans); -webkit-font-smoothing: antialiased;
+  font: 14px/1.5 var(--sans); -webkit-font-smoothing: antialiased;
 }
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: inherit; }
 button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible {
-  outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px;
+  outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px;
 }
 code, pre, .mono { font-family: var(--mono); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
 svg.ic { width: 1em; height: 1em; flex: none; display: inline-block; vertical-align: -0.125em; }
 
-.wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px 64px; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px 56px; }
 
 /* ---- top bar ---- */
-.top { position: sticky; top: 0; z-index: 20; backdrop-filter: blur(14px) saturate(1.4);
-  background: color-mix(in srgb, var(--page) 78%, transparent); border-bottom: 1px solid var(--border); }
-.top-in { max-width: 1120px; margin: 0 auto; padding: 12px 20px; display: flex; align-items: center; gap: 14px; }
-.brand { display: flex; align-items: center; gap: 10px; font-weight: 650; letter-spacing: -.01em; font-size: 17px; }
-.mark { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; color: #fff;
-  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #7a5cff)); }
-.mark svg { width: 17px; height: 17px; }
-.file { color: var(--ink2); font: 13px var(--mono); padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px;
-  max-width: 34ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: var(--surface); }
+.top { position: sticky; top: 0; z-index: 20; background: var(--surface); border-bottom: 1px solid var(--border); }
+.top-in { max-width: 1080px; margin: 0 auto; padding: 11px 20px; display: flex; align-items: center; gap: 14px; }
+.brand { font-weight: 650; letter-spacing: -.01em; font-size: 15px; }
+.file { color: var(--ink2); font: 12.5px var(--mono); padding: 3px 8px; border: 1px solid var(--border); border-radius: 5px;
+  max-width: 34ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: var(--raised); }
 .spacer { flex: 1; }
-.local { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink2); padding: 4px 10px;
-  border-radius: 999px; border: 1px solid var(--border); background: var(--surface); }
+.local { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink2); padding: 3px 8px;
+  border-radius: 5px; border: 1px solid var(--border); }
 .local svg { color: var(--ok); }
-.iconbtn { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; border: 1px solid var(--border); background: var(--surface); color: var(--ink2); }
+.iconbtn { width: 30px; height: 30px; border-radius: 6px; display: grid; place-items: center; border: 1px solid var(--border); background: var(--surface); color: var(--ink2); }
 .iconbtn:hover { color: var(--ink); background: var(--raised); }
 
-/* ---- hero ---- */
-.hero { margin-top: 28px; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 20px; }
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow); }
-.hero-l { padding: 26px 28px; position: relative; overflow: hidden;
-  background: radial-gradient(520px 240px at 0% 0%, color-mix(in srgb, var(--glow, var(--accent)) 16%, transparent), transparent 70%), var(--surface); }
-.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
-.figure { font-size: 76px; line-height: 1; font-weight: 700; letter-spacing: -.035em; margin: 10px 0 6px; display: flex; align-items: baseline; gap: 10px; }
-.figure small { font-size: 15px; letter-spacing: 0; font-weight: 500; color: var(--muted); }
-.verdict { color: var(--ink2); margin: 0; max-width: 42ch; }
+/* ---- summary ---- */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
+.summary { margin-top: 20px; padding: 14px 16px; }
+.summary-main { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 8px; }
+.fig-wrap { display: flex; align-items: baseline; gap: 5px; font-weight: 700; font-size: 15px; }
+.fig-wrap #fig { display: inline; }
+.summary-sep { color: var(--muted); }
+.verdict { color: var(--ink2); margin: 0; font-weight: 400; font-size: 13.5px; display: inline; }
 .verdict b { color: var(--ink); font-weight: 600; }
-.hero-r { padding: 22px 26px; display: flex; flex-direction: column; justify-content: center; gap: 14px; }
-.hero-r h2, .panel h2 { margin: 0; font-size: 13px; letter-spacing: .02em; font-weight: 600; color: var(--ink2); }
-.stack { display: flex; gap: 2px; height: 20px; }
-.stack .seg { flex: 1 1 0; min-width: 6px; transition: flex-grow .35s ease, opacity .2s; }
-.stack .seg:first-child { border-radius: 4px 0 0 4px; } .stack .seg:last-child { border-radius: 0 4px 4px 0; }
-.stack .seg:only-child { border-radius: 4px; }
-.stack .seg:hover, .stack .seg:focus-visible { filter: brightness(1.12); }
-.stack.zero .seg { background: var(--grid); border-radius: 4px; }
-.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--ink2); }
-.legend span { display: inline-flex; align-items: center; gap: 7px; }
-.legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
-.legend b { color: var(--ink); font-weight: 600; }
-.chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.chip { font-size: 12.5px; color: var(--ink2); padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--raised); }
-.chip b { color: var(--ink); font-weight: 600; }
-
-/* ---- tiles ---- */
-.tiles { margin-top: 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-.tile { padding: 16px 18px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow);
-  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 10px; transition: transform .15s, border-color .15s, opacity .2s; position: relative; }
-.tile:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--c) 45%, var(--border)); }
-.tile .lab { display: flex; align-items: center; gap: 8px; color: var(--ink2); font-size: 13.5px; font-weight: 550; }
-.tile .lab svg { color: var(--c); width: 18px; height: 18px; }
-.tile .val { font-size: 34px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; grid-column: 1; }
-.tile .sub { grid-column: 2; grid-row: 1 / 3; align-self: end; font-size: 12px; color: var(--muted); }
-.tile[aria-pressed="true"] { border-color: var(--c); background: color-mix(in srgb, var(--c) 9%, var(--surface)); }
-.tile[aria-pressed="true"] .sub::before { content: "filtering"; color: var(--c); font-weight: 600; }
-.tile.dim { opacity: .55; }
-.tile[data-n="0"] .val { color: var(--muted); }
+.sevfilters { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+button.sev { cursor: pointer; border: 1px solid transparent; }
+button.sev:hover { border-color: color-mix(in srgb, var(--c) 40%, transparent); }
+button.sev[aria-pressed="true"] { background: color-mix(in srgb, var(--c) 22%, transparent); border-color: color-mix(in srgb, var(--c) 55%, transparent); }
+button.sev[data-n="0"] { opacity: .45; }
+.meta { margin-top: 10px; font-size: 12px; color: var(--muted); }
 
 /* ---- filters ---- */
-.filters { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.filters { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .search { position: relative; flex: 1 1 260px; }
-.search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); width: 16px; height: 16px; pointer-events: none; }
+.search svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); width: 15px; height: 15px; pointer-events: none; }
 input[type="search"], select {
-  width: 100%; height: 38px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--ink);
-  font: inherit; font-size: 14px; padding: 0 12px;
+  width: 100%; height: 34px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+  font: inherit; font-size: 13.5px; padding: 0 10px;
 }
-input[type="search"] { padding-left: 36px; }
-select { width: auto; max-width: 210px; padding-right: 30px; cursor: pointer; text-overflow: ellipsis; }
-kbd { font: 11px var(--mono); color: var(--muted); border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); }
-.seg-ctl { display: inline-flex; padding: 3px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); }
-.seg-ctl button { padding: 5px 12px; border-radius: 7px; font-size: 13.5px; color: var(--ink2); }
+input[type="search"] { padding-left: 33px; }
+select { width: auto; max-width: 210px; padding-right: 28px; cursor: pointer; text-overflow: ellipsis; }
+kbd { font: 11px var(--mono); color: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; position: absolute; right: 9px; top: 50%; transform: translateY(-50%); }
+.seg-ctl { display: inline-flex; padding: 2px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); }
+.seg-ctl button { padding: 4px 10px; border-radius: 4px; font-size: 13px; color: var(--ink2); }
 .seg-ctl button[aria-pressed="true"] { background: var(--raised); color: var(--ink); box-shadow: inset 0 0 0 1px var(--border); font-weight: 600; }
-.ghost { height: 38px; padding: 0 12px; border-radius: 10px; color: var(--ink2); font-size: 13.5px; border: 1px solid transparent; }
+.ghost { height: 34px; padding: 0 10px; border-radius: 6px; color: var(--ink2); font-size: 13px; border: 1px solid transparent; }
 .ghost:hover { background: var(--raised); color: var(--ink); }
 .ghost[hidden] { display: none; }
 
 /* ---- by rule ---- */
-.panel { margin-top: 18px; padding: 20px 24px 14px; }
-.panel-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
-.panel-h span { font-size: 12.5px; color: var(--muted); }
-.rules { display: grid; gap: 2px; }
-.rrow { display: grid; grid-template-columns: minmax(150px, 280px) 1fr 34px; gap: 14px; align-items: center; padding: 6px 8px; margin: 0 -8px; border-radius: 8px; }
+.panel { margin-top: 14px; padding: 14px 16px 10px; }
+.panel-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.panel-h h2 { margin: 0; font-size: 12.5px; letter-spacing: .02em; font-weight: 600; color: var(--ink2); }
+.panel-h span { font-size: 12px; color: var(--muted); }
+.rules { display: grid; gap: 1px; }
+.rrow { display: grid; grid-template-columns: minmax(150px, 280px) 1fr 34px; gap: 14px; align-items: center; padding: 5px 6px; margin: 0 -6px; border-radius: 5px; }
 .rrow:hover { background: var(--raised); }
 .rrow[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 10%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent); }
 .rrow .nm { display: flex; gap: 9px; align-items: baseline; min-width: 0; }
-.rrow .nm .mono { font-size: 12.5px; color: var(--ink2); }
-.rrow .nm span:last-child { font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.track { height: 10px; border-radius: 0 5px 5px 0; background: transparent; position: relative; border-left: 1px solid var(--base); }
-.bar { height: 100%; background: var(--accent); border-radius: 0 4px 4px 0; min-width: 4px; transition: width .35s ease; }
-.rrow .n { text-align: right; font-size: 13px; color: var(--ink2); font-variant-numeric: tabular-nums; }
+.rrow .nm .mono { font-size: 12px; color: var(--ink2); }
+.rrow .nm span:last-child { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.track { height: 8px; border-radius: 0; background: transparent; position: relative; border-left: 1px solid var(--base); }
+.bar { height: 100%; background: var(--accent); border-radius: 0; min-width: 3px; transition: width .35s ease; }
+.rrow .n { text-align: right; font-size: 12.5px; color: var(--ink2); font-variant-numeric: tabular-nums; }
 
 /* ---- findings ---- */
-.list-h { margin: 34px 0 10px; display: flex; align-items: baseline; justify-content: space-between; }
-.list-h h2 { margin: 0; font-size: 18px; letter-spacing: -.01em; }
-.list-h span { color: var(--muted); font-size: 13px; }
-.group { margin-top: 22px; }
-.group-h { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: var(--ink2); margin: 0 2px 8px; }
-.group-h svg { color: var(--c); width: 16px; height: 16px; }
+.list-h { margin: 26px 0 8px; display: flex; align-items: baseline; justify-content: space-between; }
+.list-h h2 { margin: 0; font-size: 15px; letter-spacing: -.005em; }
+.list-h span { color: var(--muted); font-size: 12.5px; }
+.group { margin-top: 18px; }
+.group-h { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: var(--ink2); margin: 0 2px 6px; }
+.group-h svg { color: var(--c); width: 14px; height: 14px; }
 .group-h .ct { color: var(--muted); font-weight: 500; }
-.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 8px; overflow: hidden; position: relative; transition: border-color .15s, box-shadow .15s; }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 6px; overflow: hidden; position: relative; transition: border-color .15s; }
 .finding::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--c); }
 .finding:hover { border-color: color-mix(in srgb, var(--c) 40%, var(--border)); }
-.finding.open { box-shadow: var(--shadow); }
-.f-head { width: 100%; display: grid; grid-template-columns: 104px 66px minmax(0, 1fr) 16px; gap: 6px 14px; align-items: center; padding: 13px 16px 13px 20px; }
-.sev { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; padding: 3px 9px 3px 7px; border-radius: 999px;
+.f-head { width: 100%; display: grid; grid-template-columns: 100px 64px minmax(0, 1fr) 16px; gap: 6px 12px; align-items: center; padding: 10px 14px 10px 17px; }
+.sev { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 2px 8px 2px 6px; border-radius: 4px;
   background: color-mix(in srgb, var(--c) 14%, transparent); color: var(--ink); width: max-content; }
-.sev svg { color: var(--c); width: 15px; height: 15px; }
-.rid { font: 12.5px var(--mono); color: var(--ink2); }
+.sev svg { color: var(--c); width: 14px; height: 14px; }
+.rid { font: 12px var(--mono); color: var(--ink2); }
 .f-main { min-width: 0; }
-.f-title { font-weight: 600; display: block; }
-.f-where { font-size: 13px; color: var(--ink2); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.f-where code { font-size: 12.5px; color: var(--ink); }
+.f-title { font-weight: 600; display: block; font-size: 13.5px; }
+.f-where { font-size: 12.5px; color: var(--ink2); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.f-where code { font-size: 12px; color: var(--ink); }
 .chev { color: var(--muted); transition: transform .2s; }
 .open .chev { transform: rotate(90deg); }
-.f-body { padding: 4px 20px 18px 20px; display: grid; gap: 14px; border-top: 1px solid var(--grid); animation: fade .18s ease; }
+.f-body { padding: 2px 17px 16px 17px; display: grid; gap: 12px; border-top: 1px solid var(--grid); }
 .f-body[hidden] { display: none; }
-@keyframes fade { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
-.f-body h4 { margin: 14px 0 6px; font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
-.f-body p { margin: 0; color: var(--ink2); max-width: 78ch; }
+.f-body h4 { margin: 12px 0 5px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.f-body p { margin: 0; color: var(--ink2); max-width: 78ch; font-size: 13px; }
 .f-body p b { color: var(--ink); font-weight: 600; }
-.ev { position: relative; margin: 0; padding: 12px 14px; border-radius: 10px; background: var(--raised); border: 1px solid var(--border);
-  font-size: 12.5px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; color: var(--ink); }
+.ev { position: relative; margin: 0; padding: 10px 12px; border-radius: 5px; background: var(--raised); border: 1px solid var(--border);
+  font-size: 12px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; color: var(--ink); }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.btn { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px; border-radius: 9px; font-size: 13px; color: var(--ink2);
+.btn { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 5px; font-size: 12.5px; color: var(--ink2);
   border: 1px solid var(--border); background: var(--surface); }
 .btn:hover { color: var(--ink); background: var(--raised); }
 .btn.done { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 50%, var(--border)); }
 
-.empty { text-align: center; padding: 56px 20px; color: var(--ink2); border: 1px dashed var(--base); border-radius: 14px; }
-.empty .big { width: 46px; height: 46px; color: var(--ok); margin: 0 auto 10px; display: block; }
-.empty h3 { margin: 0 0 4px; color: var(--ink); font-size: 18px; }
-.empty p { margin: 0 auto 14px; max-width: 52ch; }
-details.supp { margin-top: 30px; }
-details.supp summary { cursor: pointer; color: var(--ink2); font-size: 14px; padding: 8px 2px; }
+.empty { text-align: center; padding: 48px 20px; color: var(--ink2); border: 1px dashed var(--base); border-radius: 6px; }
+.empty .big { width: 40px; height: 40px; color: var(--ok); margin: 0 auto 10px; display: block; }
+.empty h3 { margin: 0 0 4px; color: var(--ink); font-size: 16px; }
+.empty p { margin: 0 auto 14px; max-width: 52ch; font-size: 13.5px; }
+details.supp { margin-top: 26px; }
+details.supp summary { cursor: pointer; color: var(--ink2); font-size: 13px; padding: 8px 2px; }
 details.supp .finding { opacity: .8; }
-.note { font-size: 12.5px; color: var(--muted); margin-top: 8px; }
-footer { margin-top: 44px; color: var(--muted); font-size: 12.5px; display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: space-between; }
+.note { font-size: 12px; color: var(--muted); margin-top: 8px; }
+footer { margin-top: 36px; color: var(--muted); font-size: 12px; display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: space-between; }
 
-#tip { position: fixed; z-index: 50; pointer-events: none; opacity: 0; transition: opacity .12s; max-width: 320px; padding: 9px 12px;
-  border-radius: 10px; background: var(--surface); color: var(--ink); border: 1px solid var(--base); box-shadow: var(--shadow); font-size: 13px; }
+#tip { position: fixed; z-index: 50; pointer-events: none; opacity: 0; transition: opacity .12s; max-width: 320px; padding: 8px 11px;
+  border-radius: 6px; background: var(--surface); color: var(--ink); border: 1px solid var(--base); box-shadow: var(--shadow); font-size: 12.5px; }
 #tip.on { opacity: 1; }
 #tip .v { font-weight: 650; display: block; }
 #tip .l { color: var(--ink2); display: block; }
@@ -217,13 +188,10 @@ footer { margin-top: 44px; color: var(--muted); font-size: 12.5px; display: flex
 .nojs th, .nojs td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--grid); vertical-align: top; }
 
 @media (max-width: 860px) {
-  .hero { grid-template-columns: 1fr; }
-  .tiles { grid-template-columns: repeat(2, 1fr); }
   .f-head { grid-template-columns: 96px minmax(0, 1fr) 16px; }
   .f-head .rid { display: none; }
   .rrow { grid-template-columns: minmax(110px, 44%) 1fr 30px; }
   .file { display: none; } .local span { display: none; }
-  .figure { font-size: 60px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 @media print {
@@ -353,7 +321,7 @@ const copyBtn = (label, text) => {
   return b;
 };
 
-// ---- hero, distribution, tiles ----
+// ---- summary line and severity filters ----
 function renderSummary(shown, facet) {
   const total = findings.length, allc = count(findings);
   const figKids = [document.createTextNode(String(shown.length))];
@@ -361,51 +329,30 @@ function renderSummary(shown, facet) {
   $("fig").replaceChildren(...figKids);
   const n = allc.critical, hi = allc.high;
   let msg;
-  if (!total) msg = h("p", { class: "verdict" }, h("b", { text: "No findings." }), " None of mcpscan's rules matched this file. That is not proof it is safe.");
-  else if (n) msg = h("p", { class: "verdict" }, h("b", { text: plural(n, "critical issue") }), " need attention first" + (hi ? ", then " + plural(hi, "high-severity finding") : "") + ".");
-  else if (hi) msg = h("p", { class: "verdict" }, h("b", { text: plural(hi, "high-severity finding") }), " worth reviewing first.");
-  else msg = h("p", { class: "verdict" }, "No critical or high-severity findings. ", h("b", { text: plural(total, "lower-severity note") }), ".");
+  if (!total) msg = h("span", { class: "verdict" }, h("b", { text: "No findings." }), " None of Mcpscan's rules matched this file. That is not proof it is safe.");
+  else if (n) msg = h("span", { class: "verdict" }, h("b", { text: plural(n, "critical issue") }), " need attention first" + (hi ? ", then " + plural(hi, "high-severity finding") : "") + ".");
+  else if (hi) msg = h("span", { class: "verdict" }, h("b", { text: plural(hi, "high-severity finding") }), " worth reviewing first.");
+  else msg = h("span", { class: "verdict" }, "No critical or high-severity findings. ", h("b", { text: plural(total, "lower-severity note") }), ".");
   $("verdict").replaceChildren(msg);
-  const worst = SEVS.find((s) => allc[s]);
-  $("hero").style.setProperty("--glow", worst ? "var(--" + worst + ")" : "var(--ok)");
-  const rulesHit = new Set(findings.map((f) => f.rule_id)).size;
-  const chip = (n, w) => h("span", { class: "chip" }, h("b", { text: String(n) }), " " + w);
-  $("chips").replaceChildren(...[
-    data.tools ? chip(data.tools, data.tools === 1 ? "tool scanned" : "tools scanned") : null,
-    data.servers ? chip(data.servers, data.servers === 1 ? "server scanned" : "servers scanned") : null,
-    chip(rulesHit, rulesHit === 1 ? "rule triggered" : "rules triggered"),
-    data.suppressed.length ? chip(data.suppressed.length, "suppressed") : null,
-  ].filter(Boolean));
-
-  const sc = count(shown);
-  const stack = $("stack");
-  stack.replaceChildren();
-  stack.classList.toggle("zero", !shown.length);
-  if (!shown.length) stack.append(h("div", { class: "seg" }));
-  for (const s of SEVS) {
-    if (!sc[s]) continue;
-    const seg = h("button", { class: "seg", type: "button", "aria-label": LABEL[s] + ": " + sc[s] + ". Click to filter." });
-    seg.style.background = "var(--" + s + ")";
-    seg.style.flexGrow = String(sc[s]);
-    seg.addEventListener("click", () => toggleSev(s));
-    bindTip(seg, () => [{ cls: "v", text: plural(sc[s], "finding") }, { key: s, text: LABEL[s] + " severity" }]);
-    stack.append(seg);
-  }
-  $("legend").replaceChildren(...SEVS.map((s) => {
-    const i = h("i"); i.style.background = "var(--" + s + ")";
-    return h("span", {}, i, LABEL[s] + " ", h("b", { text: String(sc[s]) }));
-  }));
 
   const fc = count(facet);
-  $("tiles").replaceChildren(...SEVS.map((s) => {
-    const t = h("button", { class: "tile" + (state.sev.size && !state.sev.has(s) ? " dim" : ""), type: "button", "aria-pressed": String(state.sev.has(s)), "data-n": String(fc[s]) },
-      h("span", { class: "lab" }, icon(s), LABEL[s]),
-      h("span", { class: "val", text: String(fc[s]) }),
-      h("span", { class: "sub" }));
-    setColor(t, s);
-    t.addEventListener("click", () => toggleSev(s));
-    return t;
+  $("sevfilters").replaceChildren(...SEVS.map((s) => {
+    const btn = h("button", { class: "sev", type: "button", "aria-pressed": String(state.sev.has(s)), "data-n": String(fc[s]) },
+      icon(s), LABEL[s] + " ", h("b", { text: String(fc[s]) }));
+    setColor(btn, s);
+    btn.addEventListener("click", () => toggleSev(s));
+    return btn;
   }));
+
+  const rulesHit = new Set(findings.map((f) => f.rule_id)).size;
+  const ruleTotal = Object.keys(data.rules).length;
+  const parts = [
+    data.tools ? plural(data.tools, "tool") + " scanned" : null,
+    data.servers ? plural(data.servers, "server") + " scanned" : null,
+    rulesHit + " of " + ruleTotal + " rules triggered",
+    data.suppressed.length ? plural(data.suppressed.length, "finding") + " suppressed" : null,
+  ].filter(Boolean);
+  $("summary-meta").textContent = parts.join(" · ");
 }
 
 // ---- by rule ----
@@ -457,7 +404,7 @@ function findingEl(f, extra) {
   const body = h("div", { class: "f-body", id: bodyId, hidden: !isOpen },
     h("div", {}, h("h4", { text: "Evidence" }), h("pre", { class: "ev" }, h("code", { text: f.evidence }))),
     h("div", {}, h("h4", { text: "How to fix" }), h("p", { text: f.remediation })),
-    h("div", {}, h("h4", { text: "About this rule" }), h("p", {}, h("b", { text: info.name }), " — " + info.summary)),
+    h("div", {}, h("h4", { text: "About this rule" }), h("p", {}, h("b", { text: info.name }), ": " + info.summary)),
     extra ? h("p", { class: "note", text: "Suppressed by " + extra.source + (extra.reason ? ": " + extra.reason : "") }) : null,
     h("div", { class: "actions" }, copyBtn("Copy finding", findingText(f)), extra ? null : copyBtn("Copy ignore rule", ignoreSnippet(f))));
   const el = h("article", { class: "finding" + (isOpen ? " open" : "") }, head, body);
@@ -484,7 +431,7 @@ function renderList(shown) {
   $("list-count").textContent = shown.length === findings.length ? plural(findings.length, "finding") : shown.length + " of " + findings.length + " shown";
   if (!findings.length) {
     box.append(h("div", { class: "empty" }, icon("shield", "big"), h("h3", { text: "Nothing to report" }),
-      h("p", { text: "None of mcpscan's rules matched. It checks what a server declares, not what its code does." })));
+      h("p", { text: "None of Mcpscan's rules matched. It checks what a server declares, not what its code does." })));
     return;
   }
   if (!shown.length) {
@@ -533,7 +480,7 @@ function update() {
 }
 
 function init() {
-  document.title = "mcpscan report · " + (data.path.split(/[\\/]/).pop() || data.path);
+  document.title = "Mcpscan report · " + (data.path.split(/[\\/]/).pop() || data.path);
   $("file").textContent = data.path; $("file").title = data.path;
   $("meta").textContent = "mcpscan " + data.version + " · " + [data.tools ? plural(data.tools, "tool") : "", data.servers ? plural(data.servers, "server") : ""].filter(Boolean).join(", ") + " scanned";
   const rules = [...new Set(findings.map((f) => f.rule_id))].sort();
@@ -573,7 +520,7 @@ init();
 
 _BODY = """
 <header class="top"><div class="top-in">
-  <div class="brand"><span class="mark"><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg></span>mcpscan</div>
+  <div class="brand">Mcpscan</div>
   <span class="file" id="file"></span>
   <span class="spacer"></span>
   <span class="local" title="This page has a Content-Security-Policy that blocks all network access."><svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg><span>Local report &middot; nothing was uploaded</span></span>
@@ -581,18 +528,13 @@ _BODY = """
 </div></header>
 
 <main class="wrap">
-  <section class="hero" aria-label="Summary">
-    <div class="card hero-l" id="hero">
-      <div class="eyebrow">Findings</div>
-      <div class="figure" id="fig" aria-live="polite"></div>
-      <div id="verdict"></div>
+  <section class="card summary" aria-label="Summary">
+    <div class="summary-main">
+      <span class="fig-wrap"><span id="fig" aria-live="polite"></span> findings</span>
+      <span id="verdict"></span>
     </div>
-    <div class="card hero-r">
-      <h2>Severity breakdown</h2>
-      <div class="stack" id="stack" role="group" aria-label="Findings by severity"></div>
-      <div class="legend" id="legend"></div>
-      <div class="chips" id="chips"></div>
-    </div>
+    <div class="sevfilters" id="sevfilters" role="group" aria-label="Filter by severity"></div>
+    <div class="meta" id="summary-meta"></div>
   </section>
 
   <section class="filters" aria-label="Filters">
@@ -610,8 +552,6 @@ _BODY = """
     <button class="ghost" id="expand" type="button">Expand / collapse all</button>
   </section>
 
-  <section class="tiles" id="tiles" aria-label="Filter by severity"></section>
-
   <section class="card panel" id="rules-panel">
     <div class="panel-h"><h2>Findings by rule</h2><span id="rules-sub"></span></div>
     <div class="rules" id="rules"></div>
@@ -621,7 +561,7 @@ _BODY = """
   <div id="list"></div>
   <details class="supp" id="supp" hidden></details>
 
-  <footer><span id="meta"></span><span>Static analysis only. mcpscan never connects to or runs the servers it scans.</span></footer>
+  <footer><span id="meta"></span><span>Static analysis only. Mcpscan never connects to or runs the servers it scans.</span></footer>
 </main>
 <div id="tip" role="tooltip"></div>
 """
@@ -687,10 +627,10 @@ def render_html(result: ScanResult) -> str:
         '<meta http-equiv="Content-Security-Policy" content="' + csp + '">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
         '<meta name="color-scheme" content="light dark">\n'
-        "<title>mcpscan report</title>\n"
+        "<title>Mcpscan report</title>\n"
         "<style>" + _CSS + "</style>\n</head>\n<body>\n"
         + _SPRITE + _BODY +
-        '<noscript><div class="wrap nojs"><h2>mcpscan report</h2><p>This report needs JavaScript for its interactive view. '
+        '<noscript><div class="wrap nojs"><h2>Mcpscan report</h2><p>This report needs JavaScript for its interactive view. '
         "The findings are listed here.</p>" + _noscript_table(result.findings) + "</div></noscript>\n"
         '<script type="application/json" id="data">' + _json_for_script(_payload(result)) + "</script>\n"
         "<script>" + _JS + "</script>\n</body>\n</html>\n"
