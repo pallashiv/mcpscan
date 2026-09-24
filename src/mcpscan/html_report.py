@@ -72,6 +72,8 @@ svg.ic { width: 1em; height: 1em; flex: none; display: inline-block; vertical-al
 .top { position: sticky; top: 0; z-index: 20; background: var(--surface); border-bottom: 1px solid var(--border); }
 .top-in { max-width: 1080px; margin: 0 auto; padding: 11px 20px; display: flex; align-items: center; gap: 14px; }
 .brand { font-weight: 650; letter-spacing: -.01em; font-size: 15px; }
+a.brand { text-decoration: none; color: inherit; }
+a.brand:hover { color: var(--accent); }
 .file { color: var(--ink2); font: 12.5px var(--mono); padding: 3px 8px; border: 1px solid var(--border); border-radius: 5px;
   max-width: 34ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: var(--raised); }
 .spacer { flex: 1; }
@@ -640,7 +642,7 @@ def _render_nav(nav: Dict[str, Any]) -> str:
     )
     return (
         '<nav class="pagenav"><div class="pagenav-in">'
-        '<a class="home" href="' + _esc(nav["home"]) + '">&larr; All examples</a>'
+        '<a class="home" href="' + _esc(nav["home"]) + '">&larr; Home</a>'
         '<span class="sep">/</span>' + links +
         "</div></nav>\n"
     )
@@ -649,7 +651,10 @@ def _render_nav(nav: Dict[str, Any]) -> str:
 def render_html(result: ScanResult, nav: Optional[Dict[str, Any]] = None) -> str:
     csp = ("default-src 'none'; style-src " + _hash(_CSS) + "; script-src " + _hash(_JS) +
            "; img-src data:; base-uri 'none'; form-action 'none'")
-    body = _BODY.replace('<main class="wrap">', _render_nav(nav) + '<main class="wrap">', 1) if nav else _BODY
+    body = _BODY
+    if nav:
+        body = body.replace('<div class="brand">Mcpscan</div>', '<a class="brand" href="' + _esc(nav["home"]) + '">Mcpscan</a>', 1)
+        body = body.replace('<main class="wrap">', _render_nav(nav) + '<main class="wrap">', 1)
     return (
         "<!doctype html>\n"
         '<html lang="en">\n<head>\n<meta charset="utf-8">\n'
